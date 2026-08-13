@@ -2,6 +2,7 @@
 
 ## 0.1.0 — 2026-08-13
 
+- README 示例改成工单、误删、公司网关、值班 CLI 等完整场景。
 - README 按 Skill 项目重排：去掉技术栈，补全 `/dsh-plugin-builder` 提示词和预期结果。
 - 重写中文 README，去掉英译腔和硬搬术语。
 - 增加中英双 README（`README.md` / `README_CN.md`）。

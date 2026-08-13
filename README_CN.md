@@ -43,7 +43,7 @@ git clone https://github.com/kingjly/dsh-plugin-builder.git
 然后补任务。或者一行写完：
 
 ```text
-/dsh-plugin-builder 写一个 dsh 插件，给模型一个 greet 工具，能按名字打招呼。
+/dsh-plugin-builder 模型查不了我们内部工单。给它一个工具，传入工单号，返回状态和处理人。
 ```
 
 Grok 里也可以：`/skills dsh-plugin-builder`。
@@ -59,90 +59,85 @@ Grok 里也可以：`/skills dsh-plugin-builder`。
 
 ### 提示词示例
 
-下面每条都可以直接跟在 `/dsh-plugin-builder` 后面。括号里是按 `SKILL.md` 应该得到的结果，不是「可能」。
+每条都可以直接发给 `/dsh-plugin-builder`。下面写的是「你怎么说」和「做对了你该看到什么」，不是内部实现清单。
 
-**做工具（模型要调用一项新能力）**
+**查内部工单**
 
-```text
-/dsh-plugin-builder 在 D:/tmp/dsh-greet 写一个 dsh 插件。
-给模型一个 greet 工具，传入 name，返回问候语。先用 --patch 试跑。
-```
-
-应判定为工具插件：`inject: ['tools']`，`ctx.tools.register(defineTool({ name: 'greet', ... }))`，`execute` 返回规范 JSON，`output.render` 给模型看。目录里至少有 `package.json`（`type: module` 且含 `dsh.bundle.patch`）、`cordis.patch.yml`、`src/index.ts`、`plugin-design.md`，以及开发用的 `cordis.dev.yml`（其中插件 `name` 必须是 `src/index.ts` 的绝对路径）。
-
-**做钩子（拦截已有工具，不要再注册一个 bash）**
+你说：
 
 ```text
-/dsh-plugin-builder 不要让模型执行 rm -rf /。
-已有官方 bash 工具，不要再注册一个同名工具。
+/dsh-plugin-builder
+模型现在查不了我们的工单。接口是 GET https://tickets.corp.example/api/tickets/{id}，
+鉴权头用环境变量 TICKET_TOKEN。给它一个 lookup_ticket 工具：传入工单号，
+返回状态和当前处理人。文件写到 D:/work/dsh-ticket，先 --patch 跑起来。
 ```
 
-应判定为钩子：监听 `tools/pre-execute`，命中则 `{ kind: 'deny', reason: '...' }`，否则必须 `next()`。
+做对了的话：`D:/work/dsh-ticket/` 里会有 `src/index.ts`、`package.json`（含 `dsh.bundle`）、`cordis.patch.yml`、`cordis.dev.yml`、`plugin-design.md`。决策应写成「工具插件」，不是钩子，也不是再包一层 `bash` 去 curl。`cordis.dev.yml` 里插件路径是 `src/index.ts` 的绝对路径。启动 Web 之后，对模型说「T-1024 现在谁在跟」，它应调用 `lookup_ticket`，而不是自己拼 curl。源码里只能出现 `TICKET_TOKEN` 这个名字，不能出现真实 token。
 
-**接 OpenAI 兼容网关**
+**拦住误删整个磁盘**
+
+你说：
 
 ```text
-/dsh-plugin-builder 接一个 OpenAI 兼容网关。
-API 是 chat completions，密钥在环境变量 OPENAI_API_KEY。
+/dsh-plugin-builder
+模型清理仓库时老把整盘 rm -rf / 掉。官方 bash 已经有了，
+不要再做一个 bash 工具。命中这种命令就拒绝，并告诉它为什么。
 ```
 
-应先建议配置官方 `@deepseek-ai/dsh-llm-pi-ai`，不要一上来就新写适配器。只有协议或鉴权这套适配器盖不住时，才写 `ctx.llm.registerAdapter`。密钥只写环境变量名，不写进源码。
+做对了的话：生成的是钩子，不是第二个 `bash`。`ls`、普通 `git status` 应放行；`rm -rf /` 应被拒绝，模型能看到拒绝原因。实现上是听 `tools/pre-execute`，放行时必须把调用交给后面的插件，不能吞掉。
 
-**把内部 CLI 包一层给模型用**
+**公司有一台 OpenAI 兼容网关**
+
+你说：
 
 ```text
-/dsh-plugin-builder 把公司内部的天气 CLI 做成 dsh 插件。
-命令输出是纯文本，参数很少。生成到 ./dsh-weather。
+/dsh-plugin-builder
+我们不直连 OpenAI，走 https://llm.corp.example/v1，
+协议是 chat completions，密钥在 OPENAI_API_KEY。
+先看现成适配器能不能配，别一上来自己写一套。
 ```
 
-可以做成工具插件，在 `execute` 里起子进程。参数要数组传递，不要拼成一条 shell 字符串。返回给模型的应是规范 JSON，不要把 CLI 原文当 API。
+做对了的话：先给你改 `@deepseek-ai/dsh-llm-pi-ai` 的配置（`baseURL` + `apiKeyEnv: OPENAI_API_KEY`），而不是新建一个 `llm-mycompany` 包。只有网关协议跟这套对不上，才允许新写适配器。仓库里不能出现密钥正文。
 
-**Chat 里要显示一条业务进度**
+**运维有个值班命令**
+
+你说：
 
 ```text
-/dsh-plugin-builder 在 Web Chat 里显示代码审查进度。
-Host 这边现在还没有对应的会话事件。
+/dsh-plugin-builder
+机器上有命令 oncall-status shanghai，标准输出一行：ok 3 people。
+想让模型用工具查谁值班，别让它自己在 bash 里拼命令。写到 ./dsh-oncall。
 ```
 
-应先要求设计可回放的 Session 事件（扩展 `SessionEventMap`），再写 Client 的 Conversation Node。不能只做浏览器插件、不往日志里落事件。
+做对了的话：`./dsh-oncall` 里是一个工具（例如 `oncall_status`），`execute` 里用参数数组拉起 `oncall-status`，不会写成 `oncall-status ${city}` 这种拼进 shell 的字符串。返回给模型的是字段（是否正常、人数），不是整段 stdout 当 API。你在对话里说「上海现在几个值班」时，应走到这个工具。
 
-**不该做成插件的，必须停**
+**对话里要看到审查进度，刷新还在**
+
+你说：
 
 ```text
-/dsh-plugin-builder 帮我改 dsh 的 agent-loop，失败就自动再跑一轮。
+/dsh-plugin-builder
+审查跑起来以后，网页对话里想看到「已审 3/10 个文件」，刷新页面数字还在。
+现在 Host 还没往会话日志里写这类事件。
 ```
 
-应拒绝改 `agent-loop`，不生成改循环的包。重试应挂到 `tools/execute`，或用官方已有的 retry / guard 插件。
+做对了的话：它应先补 Host 侧可回放的会话事件（带着稳定的审查 id），再写浏览器里的那一行 UI。如果只丢一个前端组件、日志里什么都没有，就是做错了——刷新后进度会丢。
 
-```text
-/dsh-plugin-builder 再写一个 read 工具，读文件更方便一点。
-```
+**这几句不该生成插件**
 
-应拒绝再注册名为 `read` 的工具。官方已有 `read` / `write` / `edit`。要改行为就换 `ctx.fs` 提供方，或加 `fs/*` 策略。
+「失败就自动再跑一轮，帮我改 agent-loop。」  
+应拒绝改循环，不生成包。告诉你重试挂在工具执行上，或用官方现成的 retry / guard。
 
-```text
-/dsh-plugin-builder 我已经有一个 GitHub MCP server，接到 dsh 上。
-```
+「官方 read 不好用，再写一个更好用的 read。」  
+应拒绝再注册名为 `read` 的工具。文件读写已经有 `read` / `write` / `edit`。
 
-应改用官方 `@deepseek-ai/dsh-mcp-client`（一个 MCP server 对应一个插件），不要把 MCP 工具逐个抄成 `defineTool`。
+「GitHub 的 MCP server 我已经跑着了，接到 dsh 上。」  
+应让你挂官方 `@deepseek-ai/dsh-mcp-client`，一个 MCP server 对应一个插件。不应把 list issues、create issue 再手写一遍。
 
-```text
-/dsh-plugin-builder 做个 dsh 插件。
-```
+「做个 dsh 插件。」  
+信息不够。应问你要解决什么问题、文件放哪，不能自己编一个天气或工单出来。
 
-信息不够，不能编一个假业务。应只追问会改变产物形态的问题，或做最小的 hello 插件。
-
-### 它会交出来什么
-
-按 `SKILL.md` 的输出约定，做完一次任务应包含：
-
-1. 形态决策：做不做、做成哪一种、为什么不选别的
-2. 生成文件的路径（若判定要做插件）
-3. 本地加载命令（`--patch` 或 `dsh plugin add`）
-4. 自测做了什么、没做什么
-5. 已知限制
-
-判定「不做插件」时，只给替代方案和理由，不应生成包。
+做完一轮，回复里还应有：形态判断、文件路径（如果做了）、怎么启动、测了什么、没测什么。判定不做时，只给替代办法，不要甩出一个空包。
 
 ## 生成出来的插件怎么跑
 

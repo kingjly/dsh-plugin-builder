@@ -43,7 +43,7 @@ These are equivalent. The slash command forces this skill. A plain request may a
 Then state the task. Or put it on one line:
 
 ```text
-/dsh-plugin-builder Write a dsh plugin that exposes a greet tool. It takes a name and returns a greeting.
+/dsh-plugin-builder The model cannot see our internal tickets. Give it a tool: ticket id in, status and owner out.
 ```
 
 In Grok you can also run `/skills dsh-plugin-builder`.
@@ -59,91 +59,87 @@ Put these in the prompt when you know them:
 
 ### Prompt examples
 
-Each block can follow `/dsh-plugin-builder`. The expected result is what `SKILL.md` requires, not a guess.
+Paste these after `/dsh-plugin-builder`. Each note is what you should see if the run followed `SKILL.md`, not an internals dump.
 
-**Tool (the model needs a new capability)**
+**Look up an internal ticket**
 
-```text
-/dsh-plugin-builder Write a plugin at D:/tmp/dsh-greet.
-Give the model a greet tool that takes name and returns a greeting.
-Load it with --patch first.
-```
-
-Expected: a tool plugin, `inject: ['tools']`, `ctx.tools.register(defineTool({ name: 'greet', ... }))`, `execute` returns canonical JSON, `output.render` is what the model sees. The tree includes `package.json` (`type: module` and `dsh.bundle.patch`), `cordis.patch.yml`, `src/index.ts`, `plugin-design.md`, and a `cordis.dev.yml` whose plugin `name` is the absolute path of `src/index.ts`.
-
-**Hook (intercept an existing tool; do not register another `bash`)**
+You say:
 
 ```text
-/dsh-plugin-builder Do not let the model run rm -rf /.
-The official bash tool already exists. Do not register another tool with that name.
+/dsh-plugin-builder
+The model cannot see our tickets. GET https://tickets.corp.example/api/tickets/{id},
+auth header from TICKET_TOKEN. Add a lookup_ticket tool: ticket id in,
+status and owner out. Write it to D:/work/dsh-ticket and load with --patch first.
 ```
 
-Expected: a `tools/pre-execute` hook. Deny with `{ kind: 'deny', reason: '...' }` on a match; otherwise call `next()`.
+If it did the right thing: `D:/work/dsh-ticket/` contains `src/index.ts`, `package.json` (with `dsh.bundle`), `cordis.patch.yml`, `cordis.dev.yml`, and `plugin-design.md`. The decision says “tool plugin”, not a hook and not `bash` wrapping curl. The path in `cordis.dev.yml` is the absolute path of `src/index.ts`. After you start the Web UI, “who owns T-1024?” should call `lookup_ticket`. The repo may mention `TICKET_TOKEN`, never a live token.
 
-**OpenAI-compatible gateway**
+**Stop a full-disk delete**
+
+You say:
 
 ```text
-/dsh-plugin-builder Connect an OpenAI-compatible chat-completions gateway.
-The key is in OPENAI_API_KEY.
+/dsh-plugin-builder
+When it cleans the repo it keeps running rm -rf /. Official bash is already there.
+Do not add another bash tool. Reject that command and tell the model why.
 ```
 
-Expected: configure official `@deepseek-ai/dsh-llm-pi-ai` first. Write `ctx.llm.registerAdapter` only if that adapter cannot express the protocol or auth. Persist the env var name, never the key.
+If it did the right thing: you get a hook, not a second `bash`. `ls` and `git status` still run. `rm -rf /` is denied and the model sees the reason. The hook listens on `tools/pre-execute` and must pass the call through when it allows it.
 
-**Wrap a small internal CLI**
+**Company OpenAI-compatible gateway**
+
+You say:
 
 ```text
-/dsh-plugin-builder Turn our internal weather CLI into a dsh plugin.
-It prints plain text and takes few flags. Write it to ./dsh-weather.
+/dsh-plugin-builder
+We do not talk to OpenAI directly. Use https://llm.corp.example/v1,
+chat completions, key in OPENAI_API_KEY.
+Prefer configuring what we already ship. Do not write a new adapter first.
 ```
 
-A tool plugin that spawns the CLI is allowed. Pass argv as an array; do not concatenate a shell string. Return canonical JSON, not raw CLI text as the programmatic API.
+If it did the right thing: it edits `@deepseek-ai/dsh-llm-pi-ai` (`baseURL` + `apiKeyEnv: OPENAI_API_KEY`) instead of creating `llm-mycompany`. A new adapter is only allowed if that gateway does not fit. No secret material in the tree.
 
-**Chat progress row**
+**On-call CLI**
+
+You say:
 
 ```text
-/dsh-plugin-builder Show code-review progress in the Web Chat.
-The Host does not emit matching session events yet.
+/dsh-plugin-builder
+We have oncall-status shanghai. It prints one line: ok 3 people.
+I want a tool for that. Do not make the model type the command in bash.
+Write it to ./dsh-oncall.
 ```
 
-Expected: design replayable session events (`SessionEventMap`) first, then a Client Conversation Node. A Client-only plugin with nothing in the log is wrong.
+If it did the right thing: `./dsh-oncall` is a tool (for example `oncall_status`) that spawns `oncall-status` with an argv array, not `oncall-status ${city}` in a shell string. The model gets fields (ok, count), not raw stdout as the API. “How many people are on call in Shanghai?” should hit that tool.
 
-**Must stop (not a plugin)**
+**Progress that survives refresh**
+
+You say:
 
 ```text
-/dsh-plugin-builder Patch agent-loop so a failed turn retries automatically.
+/dsh-plugin-builder
+While a review runs I want the chat to show “3/10 files done”,
+and I want that number back after refresh.
+The Host does not write those events into the session log yet.
 ```
 
-Refuse to change `agent-loop`. Do not emit a loop-patch package. Retries belong on `tools/execute` or the official retry / guard plugins.
+If it did the right thing: it adds replayable Host session events (stable review id) first, then the chat row. A Client-only widget with an empty log is wrong — refresh would lose the count.
 
-```text
-/dsh-plugin-builder Write another read tool that is easier to use.
-```
+**These must not produce a plugin**
 
-Refuse to register a tool named `read`. Official `read` / `write` / `edit` already exist. Change `ctx.fs` or add `fs/*` policy instead.
+“Patch agent-loop so a failed turn retries.”  
+Refuse the loop change. No package. Point at tool-execution retry or the official retry / guard plugins.
 
-```text
-/dsh-plugin-builder I already have a GitHub MCP server. Wire it into dsh.
-```
+“Official read is awkward. Write a nicer read.”  
+Refuse another tool named `read`. File IO is already `read` / `write` / `edit`.
 
-Use official `@deepseek-ai/dsh-mcp-client` (one plugin per MCP server). Do not reimplement each MCP tool with `defineTool`.
+“GitHub MCP is already running. Wire it into dsh.”  
+Mount official `@deepseek-ai/dsh-mcp-client` (one plugin per server). Do not rewrite list/create issue by hand.
 
-```text
-/dsh-plugin-builder Make a dsh plugin.
-```
+“Make a dsh plugin.”  
+Not enough. Ask what problem to solve and where to put files. Do not invent a ticket or weather app.
 
-Not enough to invent a product. Ask only questions that change the artifact, or emit the minimal hello plugin.
-
-### What a finished run must return
-
-From the skill’s output contract:
-
-1. Shape decision: yes/no, which kind, why not the others
-2. File paths, if a plugin was generated
-3. Load command (`--patch` or `dsh plugin add`)
-4. What was tested and what was not
-5. Known limits
-
-If the decision is “do not make a plugin”, return the alternative only. Do not generate a package.
+A finished reply still needs: the shape decision, file paths if any, how to start it, what was tested, what was not. If the answer is “don’t make a plugin”, stop there — no empty package.
 
 ## Running a generated plugin
 
