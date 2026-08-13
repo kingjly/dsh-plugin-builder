@@ -2,6 +2,7 @@
 
 ## 0.1.0 — 2026-08-13
 
+- README 收成 Skill 说明：安装、怎么喊、5 条常用示例、生成后怎么跑。
 - README 示例按官方插件类型重写：工具、钩子、LLM、Web/FS 提供方、命令、Chat 节点、协议桥、MCP。
 - README 按 Skill 项目重排：去掉技术栈，补全 `/dsh-plugin-builder` 提示词和预期结果。
 - 重写中文 README，去掉英译腔和硬搬术语。
