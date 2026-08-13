@@ -43,7 +43,7 @@ git clone https://github.com/kingjly/dsh-plugin-builder.git
 然后补任务。或者一行写完：
 
 ```text
-/dsh-plugin-builder 模型查不了我们内部工单。给它一个工具，传入工单号，返回状态和处理人。
+/dsh-plugin-builder 按官方教程写一个 greet 工具，放到 ./dsh-greet。
 ```
 
 Grok 里也可以：`/skills dsh-plugin-builder`。
@@ -59,85 +59,105 @@ Grok 里也可以：`/skills dsh-plugin-builder`。
 
 ### 提示词示例
 
-每条都可以直接发给 `/dsh-plugin-builder`。下面写的是「你怎么说」和「做对了你该看到什么」，不是内部实现清单。
+官方把扩展分成这几类（见 [architecture](https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/architecture.zh.md) 和 [extension-cookbook](https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/cookbook/extension-cookbook.zh.md)）。一份提示词对应一类，不要混着提。
 
-**查内部工单**
-
-你说：
+**工具插件**（`ctx.tools`，官方入门就是这个）
 
 ```text
-/dsh-plugin-builder
-模型现在查不了我们的工单。接口是 GET https://tickets.corp.example/api/tickets/{id}，
-鉴权头用环境变量 TICKET_TOKEN。给它一个 lookup_ticket 工具：传入工单号，
-返回状态和当前处理人。文件写到 D:/work/dsh-ticket，先 --patch 跑起来。
+/dsh-plugin-builder 按官方教程写一个 greet 工具，放到 ./dsh-greet。
+启动后我对模型说「用 greet 跟 Ada 打招呼」，它要能调到。
 ```
 
-做对了的话：`D:/work/dsh-ticket/` 里会有 `src/index.ts`、`package.json`（含 `dsh.bundle`）、`cordis.patch.yml`、`cordis.dev.yml`、`plugin-design.md`。决策应写成「工具插件」，不是钩子，也不是再包一层 `bash` 去 curl。`cordis.dev.yml` 里插件路径是 `src/index.ts` 的绝对路径。启动 Web 之后，对模型说「T-1024 现在谁在跟」，它应调用 `lookup_ticket`，而不是自己拼 curl。源码里只能出现 `TICKET_TOKEN` 这个名字，不能出现真实 token。
+应生成独立包：`package.json` 带 `dsh.bundle`，`src/index.ts` 里 `defineTool({ name: 'greet' })`。不是钩子，也不要去改 `bash`。
 
-**拦住误删整个磁盘**
-
-你说：
+**钩子**（拦已有工具，官方权限门禁就是这个）
 
 ```text
-/dsh-plugin-builder
-模型清理仓库时老把整盘 rm -rf / 掉。官方 bash 已经有了，
-不要再做一个 bash 工具。命中这种命令就拒绝，并告诉它为什么。
+/dsh-plugin-builder 模型调用 bash 时，命令里有 rm -rf / 就拒绝。
+官方 bash 已经在了，别再注册一个 bash。
 ```
 
-做对了的话：生成的是钩子，不是第二个 `bash`。`ls`、普通 `git status` 应放行；`rm -rf /` 应被拒绝，模型能看到拒绝原因。实现上是听 `tools/pre-execute`，放行时必须把调用交给后面的插件，不能吞掉。
+应监听 `tools/pre-execute`。普通命令继续跑，危险命令被拒，模型能看见原因。
 
-**公司有一台 OpenAI 兼容网关**
-
-你说：
+**模型适配器**（`ctx.llm`）
 
 ```text
-/dsh-plugin-builder
-我们不直连 OpenAI，走 https://llm.corp.example/v1，
-协议是 chat completions，密钥在 OPENAI_API_KEY。
-先看现成适配器能不能配，别一上来自己写一套。
+/dsh-plugin-builder 推理走 OpenAI 兼容接口，base URL 是 https://api.example.com/v1，
+密钥在 OPENAI_API_KEY。能配官方 dsh-llm-pi-ai 就别新写适配器。
 ```
 
-做对了的话：先给你改 `@deepseek-ai/dsh-llm-pi-ai` 的配置（`baseURL` + `apiKeyEnv: OPENAI_API_KEY`），而不是新建一个 `llm-mycompany` 包。只有网关协议跟这套对不上，才允许新写适配器。仓库里不能出现密钥正文。
+应先改 `dsh-llm-pi-ai` 的配置。协议对不上才允许新写 `LlmAdapter`。文件里不能出现密钥正文。
 
-**运维有个值班命令**
-
-你说：
+**Web 提供方**（`ctx.web`，模型仍只看见 `web_search` / `web_fetch`）
 
 ```text
-/dsh-plugin-builder
-机器上有命令 oncall-status shanghai，标准输出一行：ok 3 people。
-想让模型用工具查谁值班，别让它自己在 bash 里拼命令。写到 ./dsh-oncall。
+/dsh-plugin-builder 给官方 web_search 加一个我们自己的搜索后端。
+模型那边工具名不要变。
 ```
 
-做对了的话：`./dsh-oncall` 里是一个工具（例如 `oncall_status`），`execute` 里用参数数组拉起 `oncall-status`，不会写成 `oncall-status ${city}` 这种拼进 shell 的字符串。返回给模型的是字段（是否正常、人数），不是整段 stdout 当 API。你在对话里说「上海现在几个值班」时，应走到这个工具。
+应注册 `ctx.web` 的搜索实现，不要再做一个叫 `my_search` 的工具。
 
-**对话里要看到审查进度，刷新还在**
-
-你说：
+**文件系统 / 沙箱提供方**（`ctx.fs` / `ctx.subprocess` / `ctx.sandbox`）
 
 ```text
-/dsh-plugin-builder
-审查跑起来以后，网页对话里想看到「已审 3/10 个文件」，刷新页面数字还在。
-现在 Host 还没往会话日志里写这类事件。
+/dsh-plugin-builder 读写文件改走远程沙箱，不要再做一套 read / write / bash。
 ```
 
-做对了的话：它应先补 Host 侧可回放的会话事件（带着稳定的审查 id），再写浏览器里的那一行 UI。如果只丢一个前端组件、日志里什么都没有，就是做错了——刷新后进度会丢。
+应换提供方。模型继续用官方的 `read`、`write`、`bash`。
 
-**这几句不该生成插件**
+**用户命令**（`ctx.commands`，不经过模型一轮）
 
-「失败就自动再跑一轮，帮我改 agent-loop。」  
-应拒绝改循环，不生成包。告诉你重试挂在工具执行上，或用官方现成的 retry / guard。
+```text
+/dsh-plugin-builder 加一个 /compact 之外的用户命令 /status，敲了直接出当前会话状态，不要再走模型。
+```
 
-「官方 read 不好用，再写一个更好用的 read。」  
-应拒绝再注册名为 `read` 的工具。文件读写已经有 `read` / `write` / `edit`。
+应注册到 `ctx.commands`，不是 `defineTool`。
 
-「GitHub 的 MCP server 我已经跑着了，接到 dsh 上。」  
-应让你挂官方 `@deepseek-ai/dsh-mcp-client`，一个 MCP server 对应一个插件。不应把 list issues、create issue 再手写一遍。
+**Chat 节点**（浏览器插件，事件要进会话日志）
 
-「做个 dsh 插件。」  
-信息不够。应问你要解决什么问题、文件放哪，不能自己编一个天气或工单出来。
+```text
+/dsh-plugin-builder 网页对话里给计划加一块可折叠卡片。刷新之后还要在。
+```
 
-做完一轮，回复里还应有：形态判断、文件路径（如果做了）、怎么启动、测了什么、没测什么。判定不做时，只给替代办法，不要甩出一个空包。
+应先有 Host 写入的会话事件，再写 Client 的 Conversation Node。只改前端、日志里没有对应事件，刷新会丢。
+
+**协议桥**（接到 `ctx.agents`）
+
+```text
+/dsh-plugin-builder 用 Telegram 跟这个 agent 说话，消息当用户输入喂进去。
+```
+
+应听 `session/event`、用 `followup()` 送输入。这是协议桥，不是新工具。
+
+**MCP**（官方已经有客户端）
+
+```text
+/dsh-plugin-builder 本机已经在跑 GitHub 的 MCP server，接到 dsh 上。
+```
+
+应挂 `@deepseek-ai/dsh-mcp-client`，一个 server 一个插件。不要把 MCP 工具再手写成 `defineTool`。
+
+**不要做成插件**
+
+```text
+/dsh-plugin-builder 改 agent-loop，失败就自动再跑一轮。
+```
+
+应拒绝，不生成包。重试走 `tools/execute` 或官方 retry / guard。
+
+```text
+/dsh-plugin-builder 官方 read 不好用，再写一个 read。
+```
+
+应拒绝。`read` / `write` / `edit` 已经占用。要改行为就换 `ctx.fs` 或加 `fs/*` 钩子。
+
+```text
+/dsh-plugin-builder 做个 dsh 插件。
+```
+
+应先问要补哪一类能力，不能自己编一个业务出来。
+
+做完一轮，回复里还应有：属于上面哪一类、文件路径（如果做了）、怎么启动、测了什么。判定不做时只给替代办法。
 
 ## 生成出来的插件怎么跑
 

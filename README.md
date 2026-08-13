@@ -43,7 +43,7 @@ These are equivalent. The slash command forces this skill. A plain request may a
 Then state the task. Or put it on one line:
 
 ```text
-/dsh-plugin-builder The model cannot see our internal tickets. Give it a tool: ticket id in, status and owner out.
+/dsh-plugin-builder Follow the official tutorial and write a greet tool in ./dsh-greet.
 ```
 
 In Grok you can also run `/skills dsh-plugin-builder`.
@@ -59,87 +59,106 @@ Put these in the prompt when you know them:
 
 ### Prompt examples
 
-Paste these after `/dsh-plugin-builder`. Each note is what you should see if the run followed `SKILL.md`, not an internals dump.
+These follow the official kinds in [architecture](https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/architecture.md) and the [extension cookbook](https://github.com/deepseek-ai/deepseek-harness/blob/47f943859bef60e4160492346772ded9b24f765a/docs/cookbook/extension-cookbook.md). One prompt, one kind.
 
-**Look up an internal ticket**
-
-You say:
+**Tool** (`ctx.tools` — this is the official first tutorial)
 
 ```text
-/dsh-plugin-builder
-The model cannot see our tickets. GET https://tickets.corp.example/api/tickets/{id},
-auth header from TICKET_TOKEN. Add a lookup_ticket tool: ticket id in,
-status and owner out. Write it to D:/work/dsh-ticket and load with --patch first.
+/dsh-plugin-builder Follow the official tutorial and write a greet tool in ./dsh-greet.
+After start, “use greet to say hi to Ada” must call that tool.
 ```
 
-If it did the right thing: `D:/work/dsh-ticket/` contains `src/index.ts`, `package.json` (with `dsh.bundle`), `cordis.patch.yml`, `cordis.dev.yml`, and `plugin-design.md`. The decision says “tool plugin”, not a hook and not `bash` wrapping curl. The path in `cordis.dev.yml` is the absolute path of `src/index.ts`. After you start the Web UI, “who owns T-1024?” should call `lookup_ticket`. The repo may mention `TICKET_TOKEN`, never a live token.
+An independent package with `dsh.bundle` and `defineTool({ name: 'greet' })`. Not a hook, and not a change to `bash`.
 
-**Stop a full-disk delete**
-
-You say:
+**Hook** (gate an existing tool — official permission-gate example)
 
 ```text
-/dsh-plugin-builder
-When it cleans the repo it keeps running rm -rf /. Official bash is already there.
-Do not add another bash tool. Reject that command and tell the model why.
+/dsh-plugin-builder If bash contains rm -rf /, deny it.
+Official bash is already installed. Do not register another bash.
 ```
 
-If it did the right thing: you get a hook, not a second `bash`. `ls` and `git status` still run. `rm -rf /` is denied and the model sees the reason. The hook listens on `tools/pre-execute` and must pass the call through when it allows it.
+Listen on `tools/pre-execute`. Normal commands still run. The model sees the deny reason.
 
-**Company OpenAI-compatible gateway**
-
-You say:
+**LLM adapter** (`ctx.llm`)
 
 ```text
-/dsh-plugin-builder
-We do not talk to OpenAI directly. Use https://llm.corp.example/v1,
-chat completions, key in OPENAI_API_KEY.
-Prefer configuring what we already ship. Do not write a new adapter first.
+/dsh-plugin-builder Use an OpenAI-compatible endpoint at https://api.example.com/v1.
+Key is OPENAI_API_KEY. Prefer configuring official dsh-llm-pi-ai. Do not write an adapter first.
 ```
 
-If it did the right thing: it edits `@deepseek-ai/dsh-llm-pi-ai` (`baseURL` + `apiKeyEnv: OPENAI_API_KEY`) instead of creating `llm-mycompany`. A new adapter is only allowed if that gateway does not fit. No secret material in the tree.
+Change `dsh-llm-pi-ai` config. A new `LlmAdapter` only if that protocol does not fit. No secret material in files.
 
-**On-call CLI**
-
-You say:
+**Web provider** (`ctx.web` — the model still sees `web_search` / `web_fetch`)
 
 ```text
-/dsh-plugin-builder
-We have oncall-status shanghai. It prints one line: ok 3 people.
-I want a tool for that. Do not make the model type the command in bash.
-Write it to ./dsh-oncall.
+/dsh-plugin-builder Add our own search backend behind official web_search.
+Do not change the tool name the model sees.
 ```
 
-If it did the right thing: `./dsh-oncall` is a tool (for example `oncall_status`) that spawns `oncall-status` with an argv array, not `oncall-status ${city}` in a shell string. The model gets fields (ok, count), not raw stdout as the API. “How many people are on call in Shanghai?” should hit that tool.
+Register a `ctx.web` search implementation. Do not add `my_search`.
 
-**Progress that survives refresh**
-
-You say:
+**FS / sandbox provider** (`ctx.fs` / `ctx.subprocess` / `ctx.sandbox`)
 
 ```text
-/dsh-plugin-builder
-While a review runs I want the chat to show “3/10 files done”,
-and I want that number back after refresh.
-The Host does not write those events into the session log yet.
+/dsh-plugin-builder Send file IO to a remote sandbox.
+Do not invent another read / write / bash.
 ```
 
-If it did the right thing: it adds replayable Host session events (stable review id) first, then the chat row. A Client-only widget with an empty log is wrong — refresh would lose the count.
+Swap the provider. The model keeps using official `read`, `write`, and `bash`.
 
-**These must not produce a plugin**
+**User command** (`ctx.commands` — no model turn)
 
-“Patch agent-loop so a failed turn retries.”  
-Refuse the loop change. No package. Point at tool-execution retry or the official retry / guard plugins.
+```text
+/dsh-plugin-builder Add a /status command that prints session state immediately, without a model turn.
+```
 
-“Official read is awkward. Write a nicer read.”  
-Refuse another tool named `read`. File IO is already `read` / `write` / `edit`.
+Register on `ctx.commands`, not `defineTool`.
 
-“GitHub MCP is already running. Wire it into dsh.”  
-Mount official `@deepseek-ai/dsh-mcp-client` (one plugin per server). Do not rewrite list/create issue by hand.
+**Chat node** (Client plugin; facts must be in the session log)
 
-“Make a dsh plugin.”  
-Not enough. Ask what problem to solve and where to put files. Do not invent a ticket or weather app.
+```text
+/dsh-plugin-builder Add a collapsible plan card in the web chat. It must survive refresh.
+```
 
-A finished reply still needs: the shape decision, file paths if any, how to start it, what was tested, what was not. If the answer is “don’t make a plugin”, stop there — no empty package.
+Host session events first, then a Client Conversation Node. A frontend-only widget is wrong.
+
+**Protocol bridge** (`ctx.agents`)
+
+```text
+/dsh-plugin-builder Talk to this agent from Telegram. Incoming messages are user input.
+```
+
+Listen on `session/event` and feed `followup()`. This is a bridge, not a new tool.
+
+**MCP** (official client already exists)
+
+```text
+/dsh-plugin-builder GitHub MCP is already running locally. Attach it to dsh.
+```
+
+Mount `@deepseek-ai/dsh-mcp-client`, one plugin per server. Do not rewrite those tools with `defineTool`.
+
+**Do not make a plugin**
+
+```text
+/dsh-plugin-builder Patch agent-loop so a failed turn retries.
+```
+
+Refuse. No package. Retry on `tools/execute` or official retry / guard.
+
+```text
+/dsh-plugin-builder Official read is awkward. Write another read.
+```
+
+Refuse. `read` / `write` / `edit` are taken. Change `ctx.fs` or add an `fs/*` hook.
+
+```text
+/dsh-plugin-builder Make a dsh plugin.
+```
+
+Ask which official kind is needed. Do not invent a product.
+
+A finished reply still names the kind, file paths if any, how to start, and what was tested. If the answer is “don’t”, stop there.
 
 ## Running a generated plugin
 
