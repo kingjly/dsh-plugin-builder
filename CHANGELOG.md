@@ -2,6 +2,7 @@
 
 ## 0.1.0 — 2026-08-13
 
+- 重写中文 README，去掉英译腔和硬搬术语。
 - 增加中英双 README（`README.md` / `README_CN.md`）。
 - 首版。从 DeepSeek Harness 官方文档抽出树外插件制作流程。
 - 形态决策门：工具 / 钩子 / 提供方 / LLM / UI / 协议桥；拒绝改 agent-loop。
