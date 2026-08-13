@@ -1,0 +1,5 @@
+- insert:
+    - id: {{ENTRY_ID}}
+      name: '{{ABSOLUTE_ENTRY}}'
+      config:
+        {{CONFIG_YAML}}

@@ -1,0 +1,5 @@
+- insert:
+    - id: {{ENTRY_ID}}
+      name: {{PACKAGE_NAME}}
+      config:
+        {{CONFIG_YAML}}
