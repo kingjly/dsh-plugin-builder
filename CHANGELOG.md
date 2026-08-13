@@ -2,6 +2,7 @@
 
 ## 0.1.0 — 2026-08-13
 
+- README 按 Skill 项目重排：去掉技术栈，补全 `/dsh-plugin-builder` 提示词和预期结果。
 - 重写中文 README，去掉英译腔和硬搬术语。
 - 增加中英双 README（`README.md` / `README_CN.md`）。
 - 首版。从 DeepSeek Harness 官方文档抽出树外插件制作流程。

@@ -3,52 +3,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![Skill](https://img.shields.io/badge/Agent_Skill-0.1.0-111827)](./SKILL.md)
 [![dsh](https://img.shields.io/badge/dsh-0.1.0--rc.5-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](./scripts/validate_dsh_plugin.py)
 
 [English](./README.md)
 
-这是一份给智能体用的 Skill，用来写 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）插件。
+给智能体用的 Skill，用来写 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）插件。
 
-你告诉它要补什么能力，它会先判断该做成工具、钩子、提供方、模型适配器、界面节点，还是协议桥。然后生成一个独立的 ESM 包（带 `dsh.bundle`），并告诉你怎么用 `--patch` 试跑、怎么用 `dsh plugin add` 装进 profile。
+你说清楚要补什么能力。智能体会先判断该做成工具、钩子、提供方、模型适配器、界面节点，还是协议桥；不该做成插件的，会停下来说明替代办法。该做的话，会在你指定的目录里生成一个独立 npm 包（`package.json` 里带 `dsh.bundle`），并告诉你怎么用 `--patch` 试跑、怎么用 `dsh plugin add` 装进 profile。
 
-适合已经决定「要写插件」的时候用。只是改提示词，或者想改 `agent-loop`，别走这套。
-
-## 它会做什么
-
-- 动手写代码之前，先判断该不该做插件、做成哪一种。官方已经有的 `read`、`bash`、`web_search` 不会再注册一遍；该写成 Skill 或 MCP 服务的，会直接挡回去。
-- 默认做成仓库外的 npm 包，名字类似 `dsh-天气` 这种 `dsh-<名字>`，不会往官方 monorepo 里塞 `@deepseek-ai/dsh-*`。
-- 只往官方扩展点上挂：`defineTool`、瀑布式钩子、`ctx.llm`，以及 `ctx.web` / `ctx.fs` 这类提供方。
-- 自带模板：最小插件、工具、钩子、`cordis.patch.yml`、开发用 overlay、设计记录。
-- `validate_dsh_plugin.py` 做静态检查：有没有 `dsh.bundle`、有没有导出 `apply`、有没有撞上官方工具名、有没有把密钥写进文件。
-- `evals/` 里有 10 个评测例子，覆盖打招呼工具、拒绝危险命令、拒绝改 loop、从 git 安装时的坑。
-
-## 什么时候用
-
-提到下面这些就可以启用：
-
-- 「做个 dsh 插件」「写 DeepSeek Harness 插件」
-- `dsh plugin add`、`cordis.yml`、`defineTool`、`dsh.bundle`、`dsh-plugin`
-- 给现成能力换后端，比如换 `ctx.llm`、`ctx.web`、`ctx.fs`、`ctx.subagents` 的实现
-
-下面这些不要用这份 Skill：
-
-- 去改 `agent-loop`
-- 写 Claude / Grok 的 `SKILL.md`（用 skill-factory）
-- 单独做 MCP 服务（用 mcp-factory；接到 dsh 上再用官方的 `dsh-mcp-client`）
-
-## 技术栈
-
-| 项目 | 说明 |
-|---|---|
-| Skill 格式 | 标准 Agent Skill：入口是 `SKILL.md`，细则在 `references/` |
-| 目标环境 | DeepSeek Harness，底层是 Cordis |
-| 生成结果 | TypeScript ESM，配置用 Schemastery |
-| 检查脚本 | Python 3.10 及以上，只用标准库 |
-| 对照文档 | `deepseek-ai/deepseek-harness@47f943859bef60e4160492346772ded9b24f765a`（`dsh@0.1.0-rc.5`） |
+对照的官方文档版本是 `deepseek-ai/deepseek-harness@47f943859bef60e4160492346772ded9b24f765a`（`dsh@0.1.0-rc.5`）。dsh 还在开发者预览，接口会变，生成结果不能当成长期稳定的 API。
 
 ## 安装
 
-克隆到智能体已经会扫描的 skills 目录：
+把本仓库放到智能体已经会扫描的 skills 目录，文件夹名必须是 `dsh-plugin-builder`，且目录里有 `SKILL.md`：
 
 ```sh
 git clone https://github.com/kingjly/dsh-plugin-builder.git
@@ -62,114 +28,168 @@ git clone https://github.com/kingjly/dsh-plugin-builder.git
 .agents/skills/dsh-plugin-builder/       # 当前项目
 ```
 
-装好之后可以直接说：
+装好后一般不用重启。有的客户端几秒内会刷新技能列表。
+
+## 怎么用
+
+### 怎么唤起
+
+两种写法效果一样。斜杠用来强制走这份 Skill；直接描述任务时，客户端也可能按 `SKILL.md` 里的 description 自动启用。
 
 ```text
-写一个 dsh 插件，给模型一个 greet 工具。
-拦截 bash，命令里有 rm -rf / 就拒绝。
-接一个 OpenAI 兼容网关。
+/dsh-plugin-builder
 ```
 
-客户端如果支持斜杠命令，可以用 `/dsh-plugin-builder`。
-
-## 自检
-
-检查这份 Skill 包本身（需要本机也有 skill-factory）：
-
-```sh
-py -3 path/to/skill-factory/scripts/validate_skill_package.py ./dsh-plugin-builder
-```
-
-检查生成出来的插件：
-
-```sh
-py -3 scripts/validate_dsh_plugin.py /path/to/your-plugin
-```
-
-一个能装上的最小目录大概是这样：
+然后补任务。或者一行写完：
 
 ```text
-dsh-hello/
-├── package.json          # type: module，且声明 dsh.bundle.patch
-├── cordis.patch.yml      # dsh plugin add 时插入的配置层
-├── src/index.ts          # 导出 name、inject、apply
-└── tsconfig.json
+/dsh-plugin-builder 写一个 dsh 插件，给模型一个 greet 工具，能按名字打招呼。
 ```
 
-开发时用 overlay 加载。注意 `name` 必须写成插件文件的绝对路径：
+Grok 里也可以：`/skills dsh-plugin-builder`。
+
+你没指定时，默认按下面这样理解：独立 npm 包（不写进官方 monorepo）、跑在 Host（agent 进程）、TypeScript ESM、装到 `web` profile、先 `--patch` 再打包。只有这些会改变产物形态时，智能体才应该追问：目标、Host 还是浏览器、有没有密钥、密钥的环境变量名。
+
+提示词里尽量写清这几件事，少返工：
+
+1. 要解决什么问题（不要只说「做个插件」）
+2. 插件生成到哪个目录
+3. 先本地试跑，还是直接做成可安装包
+4. 有密钥的话，环境变量叫什么。不要把真实 token 贴进对话后指望它写进文件——按约定只会写引用名
+
+### 提示词示例
+
+下面每条都可以直接跟在 `/dsh-plugin-builder` 后面。括号里是按 `SKILL.md` 应该得到的结果，不是「可能」。
+
+**做工具（模型要调用一项新能力）**
+
+```text
+/dsh-plugin-builder 在 D:/tmp/dsh-greet 写一个 dsh 插件。
+给模型一个 greet 工具，传入 name，返回问候语。先用 --patch 试跑。
+```
+
+应判定为工具插件：`inject: ['tools']`，`ctx.tools.register(defineTool({ name: 'greet', ... }))`，`execute` 返回规范 JSON，`output.render` 给模型看。目录里至少有 `package.json`（`type: module` 且含 `dsh.bundle.patch`）、`cordis.patch.yml`、`src/index.ts`、`plugin-design.md`，以及开发用的 `cordis.dev.yml`（其中插件 `name` 必须是 `src/index.ts` 的绝对路径）。
+
+**做钩子（拦截已有工具，不要再注册一个 bash）**
+
+```text
+/dsh-plugin-builder 不要让模型执行 rm -rf /。
+已有官方 bash 工具，不要再注册一个同名工具。
+```
+
+应判定为钩子：监听 `tools/pre-execute`，命中则 `{ kind: 'deny', reason: '...' }`，否则必须 `next()`。
+
+**接 OpenAI 兼容网关**
+
+```text
+/dsh-plugin-builder 接一个 OpenAI 兼容网关。
+API 是 chat completions，密钥在环境变量 OPENAI_API_KEY。
+```
+
+应先建议配置官方 `@deepseek-ai/dsh-llm-pi-ai`，不要一上来就新写适配器。只有协议或鉴权这套适配器盖不住时，才写 `ctx.llm.registerAdapter`。密钥只写环境变量名，不写进源码。
+
+**把内部 CLI 包一层给模型用**
+
+```text
+/dsh-plugin-builder 把公司内部的天气 CLI 做成 dsh 插件。
+命令输出是纯文本，参数很少。生成到 ./dsh-weather。
+```
+
+可以做成工具插件，在 `execute` 里起子进程。参数要数组传递，不要拼成一条 shell 字符串。返回给模型的应是规范 JSON，不要把 CLI 原文当 API。
+
+**Chat 里要显示一条业务进度**
+
+```text
+/dsh-plugin-builder 在 Web Chat 里显示代码审查进度。
+Host 这边现在还没有对应的会话事件。
+```
+
+应先要求设计可回放的 Session 事件（扩展 `SessionEventMap`），再写 Client 的 Conversation Node。不能只做浏览器插件、不往日志里落事件。
+
+**不该做成插件的，必须停**
+
+```text
+/dsh-plugin-builder 帮我改 dsh 的 agent-loop，失败就自动再跑一轮。
+```
+
+应拒绝改 `agent-loop`，不生成改循环的包。重试应挂到 `tools/execute`，或用官方已有的 retry / guard 插件。
+
+```text
+/dsh-plugin-builder 再写一个 read 工具，读文件更方便一点。
+```
+
+应拒绝再注册名为 `read` 的工具。官方已有 `read` / `write` / `edit`。要改行为就换 `ctx.fs` 提供方，或加 `fs/*` 策略。
+
+```text
+/dsh-plugin-builder 我已经有一个 GitHub MCP server，接到 dsh 上。
+```
+
+应改用官方 `@deepseek-ai/dsh-mcp-client`（一个 MCP server 对应一个插件），不要把 MCP 工具逐个抄成 `defineTool`。
+
+```text
+/dsh-plugin-builder 做个 dsh 插件。
+```
+
+信息不够，不能编一个假业务。应只追问会改变产物形态的问题，或做最小的 hello 插件。
+
+### 它会交出来什么
+
+按 `SKILL.md` 的输出约定，做完一次任务应包含：
+
+1. 形态决策：做不做、做成哪一种、为什么不选别的
+2. 生成文件的路径（若判定要做插件）
+3. 本地加载命令（`--patch` 或 `dsh plugin add`）
+4. 自测做了什么、没做什么
+5. 已知限制
+
+判定「不做插件」时，只给替代方案和理由，不应生成包。
+
+## 生成出来的插件怎么跑
+
+开发期用 overlay。`cordis.dev.yml` 里的 `name` 必须是绝对路径，相对路径会加载失败：
 
 ```sh
 pnpm dsh web --patch ./cordis.dev.yml
 ```
 
-确认没问题再装进 profile：
+如果你装的是发布版 CLI，而不是仓库源码，把前面的 `pnpm dsh` 换成 `dsh` 或 `npx @deepseek-ai/dsh`。`--patch` 是 dsh 自己的参数。
+
+装进 `web` profile：
 
 ```sh
 dsh plugin --profile web add ./dsh-hello
 dsh --profile web --dump-config
 ```
 
-## 工作顺序
+`dump-config` 里应能看到对应 bundle 那一层。从 git 装 TypeScript 源码仓时，包必须自带可独立运行的 `prepare`；用户还要在该 profile 的 `pnpm-workspace.yaml` 里写 `allowBuilds`。更省事的是 `pnpm pack` 出 tarball，或发已经构建好的 npm 包。
 
-1. 问清目标：做什么、跑在 Host 还是浏览器、有没有密钥。
-2. 判断形态：该停就停，该做就选定扩展点。细则见 `references/shape-decision.md`。
-3. 用 `assets/templates/` 搭目录。
-4. 只实现上一步选定的那一种形态。
-5. 先跑静态检查；本机有 dsh 的话，再用 `--patch` 试一次。
-6. 交代怎么发布：`dsh.bundle`、git 安装需要的 `prepare` 和 `allowBuilds`，或者直接发 npm / tarball。
-
-## 目录
-
-```text
-dsh-plugin-builder/
-├── SKILL.md                 # 智能体入口，流程写在这里
-├── README.md                # 英文说明
-├── README_CN.md             # 中文说明
-├── LICENSE.txt
-├── CHANGELOG.md
-├── agents/openai.yaml
-├── references/              # 按需再读，不必一次塞进上下文
-│   ├── shape-decision.md
-│   ├── tool-plugin.md
-│   ├── hook-policy.md
-│   ├── llm-adapter.md
-│   ├── ui-node.md
-│   ├── publish-profile.md
-│   ├── safety.md
-│   ├── first-party-monorepo.md
-│   └── source-ledger.md
-├── assets/templates/
-├── scripts/
-│   ├── render_template.py
-│   └── validate_dsh_plugin.py
-├── evals/
-└── examples/
-```
-
-## 脚本
+本仓库的静态检查（不启动 dsh、不访问网络）：
 
 ```sh
-py -3 scripts/render_template.py assets/templates/plugin-tool.template.ts PACKAGE_NAME=dsh-hello -o out.ts
-py -3 scripts/validate_dsh_plugin.py /path/to/plugin
+py -3 scripts/validate_dsh_plugin.py /path/to/your-plugin
 ```
 
-这两个脚本不访问网络，也不会启动 dsh。
+Windows 上 Python 启动器按 `py -3` 写。工具插件至少要能证明：schema 注册上了、一次调用成功、缺必填参数时失败而不是把进程打崩。钩子至少要有拒绝和放行两条路径。
 
-## 已知限制
+## 不要用这份 Skill 做的事
 
-- dsh 还在开发者预览，接口随时可能改。生成完插件，最好再对一下当时的官方文档。
-- 校验脚本只看文件，不会打开 Web 界面。
-- 仓库外的插件默认不会出现在 Web 的「设置」页，除非改 Host 白名单。
-- 写在 agent preset 里的插件，不能注册 settings 命名空间。
+- 改 `agent-loop`，或自己写一套循环
+- 写 Claude / Grok 的 `SKILL.md`（那是另一份 Skill 的工作）
+- 单独实现一个 MCP server
+- 只调研 dsh 生态、并不打算写插件
+- 往 `deepseek-ai/deepseek-harness` 仓库的 `packages/` 里加官方包（那是 first-party 流程，见 `references/first-party-monorepo.md`）
 
-## 参与
+## 限制
 
-欢迎提 Issue 和 PR。`SKILL.md` 尽量写短，细节放到 `references/`。如果改了「先判断形态」这条规则，请同步改一条评测用例。
+- 生成的 TypeScript 要对应当时的 dsh 类型，预览期升级后可能编不过。
+- 校验脚本只看文件，不会替你打开 `http://127.0.0.1:3080`。
+- 独立安装的插件默认不会出现在 Web「设置」里，曝光名单在 Host 的 apiproxy，不是插件自己能声明的。
+- 写在 agent preset 里的插件不能注册 settings 命名空间，多开会撞车。配置写在 preset 的 `cordis.yml` 里。
+
+## 仓库里有什么
+
+智能体真正执行的是 `SKILL.md`。`references/` 按任务再读，不必一次全看。`assets/templates/` 是脚手架，`evals/` 和 `examples/` 是评测用例。
 
 ## 许可证
 
 [MIT](./LICENSE.txt)
-
----
-
-整理自 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 官方文档。[kingjly](https://github.com/kingjly)
