@@ -19,22 +19,16 @@ def write(path: Path, text: str) -> None:
 
 
 def main() -> int:
-    greeter = uri("dsh-greeter")
-    metrics = uri("dsh-text-metrics")
+    readiness = uri("dsh-release-readiness")
     safety = uri("dsh-command-safety")
 
     write(
         SHOWCASE / "cordis.dev.yml",
         f"""- insert:
-    - id: showcase-greeter
-      name: '{greeter}'
+    - id: showcase-release-readiness
+      name: '{readiness}'
       config:
-        greeting: 'Hello, '
-        punctuation: '!'
-    - id: showcase-text-metrics
-      name: '{metrics}'
-      config:
-        maxCharacters: 10000
+        maxChecks: 24
     - id: showcase-command-safety
       name: '{safety}'
       config:
@@ -48,22 +42,12 @@ def main() -> int:
 """,
     )
     write(
-        SHOWCASE / "dsh-greeter" / "cordis.dev.yml",
+        SHOWCASE / "dsh-release-readiness" / "cordis.dev.yml",
         f"""- insert:
-    - id: showcase-greeter
-      name: '{greeter}'
+    - id: showcase-release-readiness
+      name: '{readiness}'
       config:
-        greeting: 'Hello, '
-        punctuation: '!'
-""",
-    )
-    write(
-        SHOWCASE / "dsh-text-metrics" / "cordis.dev.yml",
-        f"""- insert:
-    - id: showcase-text-metrics
-      name: '{metrics}'
-      config:
-        maxCharacters: 10000
+        maxChecks: 24
 """,
     )
     write(

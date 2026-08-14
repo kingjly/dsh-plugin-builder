@@ -70,6 +70,22 @@ def errors_for(root: Path) -> list[str]:
             if "insert:" not in text and "id:" not in text:
                 errors.append("cordis patch 看起来不是 patch 条目数组")
 
+    client = (pkg.get("dsh") or {}).get("client")
+    if client is not None:
+        if not isinstance(client, dict):
+            errors.append("dsh.client 必须是对象")
+        else:
+            if client.get("platform") != "web":
+                errors.append('Web Client 插件必须声明 dsh.client.platform = "web"')
+            inject = client.get("inject")
+            if not isinstance(inject, list) or not all(isinstance(item, str) for item in inject):
+                errors.append("dsh.client.inject 必须是包名字符串数组")
+        client_export = (pkg.get("exports") or {}).get("./client")
+        if not isinstance(client_export, dict) or not isinstance(client_export.get("default"), str):
+            errors.append("dsh.client 插件必须导出 exports['./client'].default")
+        if not (root / "src" / "client" / "index.ts").is_file():
+            errors.append("dsh.client 插件缺少 src/client/index.ts")
+
     entry_candidates = [
         root / "src" / "index.ts",
         root / "index.ts",
@@ -96,6 +112,15 @@ def errors_for(root: Path) -> list[str]:
         for tool in RESERVED_TOOLS:
             if re.search(rf"name:\s*['\"]{tool}['\"]", src):
                 errors.append(f"不要注册官方已占用的工具名 {tool!r}；改提供方或加钩子")
+
+    if client is not None:
+        client_src = root / "src" / "client" / "index.ts"
+        if client_src.is_file():
+            text = client_src.read_text(encoding="utf-8")
+            if not APPLY_RE.search(text):
+                errors.append("src/client/index.ts 未导出 apply")
+            if "conversationEvents.register" in text and "conversation.chat.node" not in text:
+                errors.append("Conversation Node 已注册 Definition，但没有注册 keyed Chat renderer")
 
     for path in root.rglob("*"):
         if path.suffix.lower() not in {".ts", ".js", ".yml", ".yaml", ".json", ".md"}:

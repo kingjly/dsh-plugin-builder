@@ -94,7 +94,7 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 硬约束（细节在各 reference，此处只列门闩）：
 
 - 扩展插件只依赖 **Service Definition**，不依赖具体提供方。
-- Waterfall 监听必须调用 `next()`，除非你要短路。
+- 只做最终拒绝的单调策略优先用 `ctx.tools.guard()`；需要审批、改写或与其他处理器串联时再用 waterfall，放行必须调用 `next()`。
 - 抵达模型的内容必须能从会话日志重建。
 - 部署会变的值必须是 `Config` 字段，用 Schemastery 导出，不要普通对象。
 - 无效配置在加载时响亮失败。
@@ -125,7 +125,7 @@ pnpm dsh web --patch ./cordis.dev.yml
 只实现第 1 步选中的那一种形态。常见最小实现：
 
 - 工具：`ctx.tools.register(defineTool({...}))`，`execute` 返回规范 JSON，`output.render` 面向模型。
-- 钩子：`ctx.on('tools/pre-execute', async (exec, next) => ...)`。
+- 最终拒绝策略：`ctx.tools.guard(exec => reason | undefined)`；审批、改写或串联：`ctx.on('tools/pre-execute', async (exec, next) => ...)`。
 - 适配器：`ctx.llm.registerAdapter(['route'], adapter)`。
 - UI：注册 `ConversationNodeDefinition` + keyed renderer；Host 先落可回放事件。
 
@@ -136,7 +136,7 @@ pnpm dsh web --patch ./cordis.dev.yml
 1. 跑 `py -3 scripts/validate_dsh_plugin.py <pkg>`。
 2. 能从源码跑 dsh 时：`--patch` 启动，确认加载日志，再让模型走一条成功路径。
 3. 工具插件至少证明：schema 出现、一次成功调用、一次非法参数失败。
-4. 钩子插件至少证明：拒绝路径和放行路径。
+4. 策略插件至少证明：拒绝路径和放行路径；guard 还要覆盖实际 transport 的参数形状。
 5. 自测失败先修，再交付。
 
 ### 第 6 步 · 打包安装
@@ -170,7 +170,7 @@ Git 安装必须有自包含 `prepare`，用户还要在 profile 的 `pnpm-works
 - [ ] 没有改 `agent-loop`，没有预防性拆三包 seam。
 - [ ] `package.json` 含 `type: module` 与 `dsh.bundle.patch`；patch 能对上入口。
 - [ ] `validate_dsh_plugin.py` 通过；无硬编码密钥。
-- [ ] 工具有规范 `output.schema`；钩子 waterfall 调用 `next()`。
+- [ ] 工具有规范 `output.schema`；guard 的放行返回 `undefined`，waterfall 的放行调用 `next()`。
 - [ ] 可调参数在 `Config`；误配会在加载失败。
 
 ## 渐进式引用

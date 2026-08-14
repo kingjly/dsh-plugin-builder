@@ -1,5 +1,0 @@
-- insert:
-    - id: showcase-text-metrics
-      name: dsh-text-metrics
-      config:
-        maxCharacters: 10000

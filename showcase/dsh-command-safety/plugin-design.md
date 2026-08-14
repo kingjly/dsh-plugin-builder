@@ -5,15 +5,15 @@
 - Goal: deny selected destructive shell invocations while preserving ordinary `bash` and `pwsh` behavior.
 - Build a plugin: yes.
 - Out-of-tree / first-party: out-of-tree.
-- Shape: hook / policy.
-- Mount point: `tools/pre-execute` waterfall.
-- Why not another shape: `bash` and `pwsh` already exist; registering wrapper tools would create conflicts and let other providers bypass the policy.
-- Split a capability seam: no; this is a policy listener on the existing registry seam.
+- Shape: monotonic guard / policy.
+- Mount point: `ctx.tools.guard()`.
+- Why not another shape: `bash` and `pwsh` already exist; registering wrapper tools would create conflicts, while a waterfall handler could accidentally swallow or replace execution.
+- Split a capability seam: no; this is a policy guard on the existing registry seam.
 
 ## Contract
 
 - Package: `dsh-command-safety`
-- Plugin name: `dsh-command-safety`
+- Plugin name: `showcase-command-safety`
 - Loader row id: `showcase-command-safety`
 - Inject: `tools`
 - Model-visible name: none
@@ -32,7 +32,9 @@ Invalid regular expressions fail during plugin loading instead of silently disab
 ## Verification plan
 
 - [x] Static plugin validator
-- [x] Denial path does not call `next()`
-- [x] Allowed path delegates through `next()`
+- [x] Matching direct, string, and composite-wrapped arguments are denied
+- [x] Allowed and unrelated calls return no denial
 - [x] Invalid regex fails loudly
-- [x] Web profile loads the plugin (model invocation not run: no API key configured)
+- [x] A real Web conversation shows the typed denial, reason, and matched rule.
+- [x] The protected command was denied before PowerShell ran.
+- [x] Settings → Plugins → Plugin list finds the mounted entry through `showcase` search.

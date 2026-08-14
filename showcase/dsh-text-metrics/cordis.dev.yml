@@ -1,5 +1,0 @@
-- insert:
-    - id: showcase-text-metrics
-      name: 'file:///ABSOLUTE/PATH/TO/dsh-plugin-builder/showcase/dsh-text-metrics/src/index.ts'
-      config:
-        maxCharacters: 10000

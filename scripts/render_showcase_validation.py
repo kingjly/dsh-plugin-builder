@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SHOWCASE = ROOT / "showcase"
 OUTPUT = ROOT / "docs" / "images" / "showcase-validation.png"
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+PLUGINS = ("dsh-release-readiness", "dsh-command-safety")
 
 
 def run(command: list[str], cwd: Path = ROOT, env: dict[str, str] | None = None) -> str:
@@ -54,7 +55,7 @@ def main() -> int:
     py = shutil.which("py.exe") or shutil.which("py") or "py"
     version = run([dsh, "--version"])
     validator_lines: list[str] = []
-    for package in ("dsh-greeter", "dsh-text-metrics", "dsh-command-safety"):
+    for package in PLUGINS:
         result = run(
             [py, "-3", str(ROOT / "scripts" / "validate_dsh_plugin.py"), str(SHOWCASE / package)]
         )
@@ -77,9 +78,7 @@ def main() -> int:
             "--profile",
             "showcase",
             "add",
-            str(SHOWCASE / "dsh-greeter"),
-            str(SHOWCASE / "dsh-text-metrics"),
-            str(SHOWCASE / "dsh-command-safety"),
+            *(str(SHOWCASE / package) for package in PLUGINS),
             "--offline",
         ],
         cwd=SHOWCASE,
@@ -92,7 +91,7 @@ def main() -> int:
     )
     bundles = [
         package
-        for package in ("dsh-greeter", "dsh-text-metrics", "dsh-command-safety")
+        for package in PLUGINS
         if f"# == {package}" in config
     ]
 

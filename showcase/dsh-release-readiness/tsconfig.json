@@ -7,7 +7,7 @@
     "noImplicitAny": true,
     "skipLibCheck": true,
     "declaration": true,
-    "outDir": "dist",
+    "outDir": "lib/types",
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"]

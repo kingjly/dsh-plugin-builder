@@ -7,5 +7,5 @@
           - pwsh
         blockedPatterns:
           - '\brm\s+-(?=[^\s]*r)(?=[^\s]*f)[^\s]+\s+(?:/|~|\$HOME)(?:\s|$)'
-          - '\bRemove-Item\b(?=[^\r\n]*\b-Recurse\b)(?=[^\r\n]*\b-Force\b)'
+          - '\bRemove-Item\b(?=[^\r\n]*-Recurse\b)(?=[^\r\n]*-Force\b)'
         reason: 'Blocked by the command-safety policy.'

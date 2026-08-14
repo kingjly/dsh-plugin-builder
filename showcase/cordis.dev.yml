@@ -1,15 +1,10 @@
 - insert:
-    - id: showcase-greeter
-      name: 'file:///ABSOLUTE/PATH/TO/dsh-plugin-builder/showcase/dsh-greeter/src/index.ts'
+    - id: showcase-release-readiness
+      name: 'file:///C:/Users/kingjly/.grok/skills/dsh-plugin-builder/showcase/dsh-release-readiness/src/index.ts'
       config:
-        greeting: 'Hello, '
-        punctuation: '!'
-    - id: showcase-text-metrics
-      name: 'file:///ABSOLUTE/PATH/TO/dsh-plugin-builder/showcase/dsh-text-metrics/src/index.ts'
-      config:
-        maxCharacters: 10000
+        maxChecks: 24
     - id: showcase-command-safety
-      name: 'file:///ABSOLUTE/PATH/TO/dsh-plugin-builder/showcase/dsh-command-safety/src/index.ts'
+      name: 'file:///C:/Users/kingjly/.grok/skills/dsh-plugin-builder/showcase/dsh-command-safety/src/index.ts'
       config:
         protectedTools:
           - bash

@@ -1,31 +1,24 @@
 # Generated plugin showcase
 
-These three independent packages were produced by following the repository's
-`SKILL.md` workflow against `@deepseek-ai/dsh@0.1.0-rc.6`.
+These two independent packages were produced by following the repository's `SKILL.md` workflow against `@deepseek-ai/dsh@0.1.0-rc.6`.
 
-| Package | Shape | Mount point | Model-visible tool |
+| Package | Shape | Mount point | Visible effect |
 |---|---|---|---|
-| `dsh-greeter` | Tool | `ctx.tools.register()` | `greet` |
-| `dsh-text-metrics` | Tool | `ctx.tools.register()` | `text_metrics` |
-| `dsh-command-safety` | Hook | `tools/pre-execute` | None |
+| `dsh-release-readiness` | Host Tool + Client Conversation Node | `ctx.tools.register()`, core `tool/result.meta`, keyed `conversation.chat.node` renderer | A scored, replayable release dashboard with warnings and blockers |
+| `dsh-command-safety` | Policy guard | `ctx.tools.guard()` | A typed denial prevents a matching destructive shell call from executing |
 
-## Run all three from source
+## Run both from source
 
 ```powershell
 py -3 ../scripts/render_showcase_overlays.py
 pnpm install
+pnpm build
+pnpm test
 dsh web --patch ./cordis.dev.yml
 ```
 
-The renderer writes portable `file://` import specifiers for the current checkout,
-including the required `file:///C:/...` form on Windows.
+The renderer writes portable `file://` import specifiers for the current checkout, including the required `file:///C:/...` form on Windows.
 
-## Build and test
+Each package contains its own installable `dsh.bundle`, design record, development overlay, smoke tests, and README. `dsh-release-readiness` additionally ships the Web bundle declared by `dsh.client`.
 
-```powershell
-pnpm build
-pnpm test
-```
-
-Each package also contains its own installable `dsh.bundle`, design record,
-development overlay, smoke test, and README.
+When using an installed profile, set the same `DSH_HOME` before installing and every time the service starts. Otherwise Harness will use another profile and conversation storage root.

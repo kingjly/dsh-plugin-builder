@@ -1,7 +1,7 @@
 {
   "name": "dsh-command-safety",
-  "version": "0.1.0",
-  "description": "A configurable pre-execution command policy hook for DeepSeek Harness.",
+  "version": "0.2.0",
+  "description": "A configurable monotonic command policy guard for DeepSeek Harness.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

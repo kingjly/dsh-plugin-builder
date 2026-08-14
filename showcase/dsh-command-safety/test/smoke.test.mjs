@@ -3,68 +3,55 @@ import test from 'node:test'
 
 import { apply } from '../dist/index.js'
 
-function loadHook(overrides = {}) {
-  let handler
+function loadGuard(overrides = {}) {
+  let guard
   apply({
-    on(event, listener) {
-      assert.equal(event, 'tools/pre-execute')
-      handler = listener
-      return () => undefined
+    tools: {
+      guard(listener) {
+        guard = listener
+        return () => undefined
+      },
     },
   }, {
     protectedTools: ['bash', 'pwsh'],
     blockedPatterns: [
       '\\brm\\s+-(?=[^\\s]*r)(?=[^\\s]*f)[^\\s]+\\s+(?:/|~|\\$HOME)(?:\\s|$)',
-      '\\bRemove-Item\\b(?=[^\\r\\n]*\\b-Recurse\\b)(?=[^\\r\\n]*\\b-Force\\b)',
+      '\\bRemove-Item\\b(?=[^\\r\\n]*-Recurse\\b)(?=[^\\r\\n]*-Force\\b)',
     ],
     reason: 'Blocked by test policy.',
     ...overrides,
   })
-  assert.equal(typeof handler, 'function')
-  return handler
+  assert.equal(typeof guard, 'function')
+  return guard
 }
 
-test('denies matching bash command without delegating', async () => {
-  const hook = loadHook()
-  let delegated = false
-  const decision = await hook(
-    { name: 'bash', arguments: { command: 'rm -rf /' } },
-    async () => {
-      delegated = true
-      return { kind: 'allow' }
-    },
-  )
-  assert.equal(decision.kind, 'deny')
-  assert.match(decision.reason, /Blocked by test policy/)
-  assert.equal(delegated, false)
+test('denies matching bash command', () => {
+  const guard = loadGuard()
+  const reason = guard({ name: 'bash', arguments: { command: 'rm -rf /' } })
+  assert.match(reason, /Blocked by test policy/)
 })
 
-test('denies reordered recursive/force flags', async () => {
-  const hook = loadHook()
-  const decision = await hook(
-    { name: 'bash', arguments: { command: 'rm -fr /' } },
-    async () => ({ kind: 'allow' }),
-  )
-  assert.equal(decision.kind, 'deny')
+test('denies reordered recursive/force flags', () => {
+  const guard = loadGuard()
+  const reason = guard({ name: 'bash', arguments: { command: 'rm -fr /' } })
+  assert.match(reason, /Blocked by test policy/)
 })
 
-test('allows safe commands through next()', async () => {
-  const hook = loadHook()
-  let delegated = false
-  const decision = await hook(
-    { name: 'bash', arguments: { command: 'printf safe' } },
-    async () => {
-      delegated = true
-      return { kind: 'allow' }
-    },
-  )
-  assert.deepEqual(decision, { kind: 'allow' })
-  assert.equal(delegated, true)
+test('allows safe commands', () => {
+  const guard = loadGuard()
+  const reason = guard({ name: 'bash', arguments: { command: 'printf safe' } })
+  assert.equal(reason, undefined)
+})
+
+test('denies command text carried by a composite transport wrapper', () => {
+  const guard = loadGuard()
+  const reason = guard({ name: 'pwsh', arguments: { input: { command: 'Remove-Item .\\probe -Force -Recurse' } } })
+  assert.match(reason, /Blocked by test policy/)
 })
 
 test('fails loudly when a configured regex is invalid', () => {
   assert.throws(
-    () => loadHook({ blockedPatterns: ['['] }),
+    () => loadGuard({ blockedPatterns: ['['] }),
     /not a valid regular expression/,
   )
 })
