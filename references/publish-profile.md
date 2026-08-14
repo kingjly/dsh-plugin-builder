@@ -11,12 +11,12 @@
 
 ## 开发 vs 安装
 
-开发（源码树，绝对路径）：
+开发（源码树，POSIX 绝对路径）：
 
 ```yaml
 - insert:
     - id: hello
-      name: 'D:/path/to/plugin/src/index.ts'
+      name: '/absolute/path/to/plugin/src/index.ts'
       config:
         greeting: Hi
 ```
@@ -24,6 +24,16 @@
 ```sh
 pnpm dsh web --patch ./cordis.dev.yml
 ```
+
+Windows 上的 Node ESM import specifier 必须写成文件 URL：
+
+```yaml
+- insert:
+    - id: hello
+      name: 'file:///D:/path/to/plugin/src/index.ts'
+```
+
+不要写 `D:/...`；Node 会把 `d:` 解释为不支持的 URL 协议。
 
 安装后的 patch 用包名：
 

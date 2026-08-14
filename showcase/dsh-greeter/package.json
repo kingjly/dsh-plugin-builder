@@ -1,16 +1,25 @@
 {
-  "name": "{{PACKAGE_NAME}}",
+  "name": "dsh-greeter",
   "version": "0.1.0",
-  "description": "{{PACKAGE_DESCRIPTION}}",
+  "description": "A configurable greeting tool for DeepSeek Harness.",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
     "dist",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "node --test test/smoke.test.mjs"
   },
   "dsh": {
     "bundle": {
@@ -27,7 +36,8 @@
   },
   "keywords": [
     "dsh-plugin",
-    "deepseek-harness"
+    "deepseek-harness",
+    "tool"
   ],
   "license": "MIT"
 }

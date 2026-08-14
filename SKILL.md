@@ -4,11 +4,11 @@ description: 把一项能力做成可安装的 DeepSeek Harness（dsh）插件�
 license: MIT
 compatibility: Agent Skills clients such as Grok, Claude Code, and Codex. Optional: Node.js 22+, dsh CLI, Python 3.10+ for local validators.
 metadata:
-  version: "0.1.0"
-  generated_on: "2026-08-13"
+  version: "0.2.0"
+  generated_on: "2026-08-14"
   source_mode: "web"
   language: "zh-CN"
-  dsh_pin: "deepseek-ai/deepseek-harness@47f943859bef60e4160492346772ded9b24f765a (dsh@0.1.0-rc.5)"
+  dsh_pin: "@deepseek-ai/dsh@0.1.0-rc.6; official docs checked on 2026-08-14"
 ---
 
 # DSH 插件制作
@@ -112,13 +112,13 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 └── README.md
 ```
 
-用 `assets/templates/` + `scripts/render_template.py`。开发期另给一份绝对路径的 `cordis.dev.yml`，供：
+用 `assets/templates/` + `scripts/render_template.py`。开发期另给一份绝对 import specifier 的 `cordis.dev.yml`，供：
 
 ```sh
 pnpm dsh web --patch ./cordis.dev.yml
 ```
 
-`cordis.patch.yml` 里的 `name` 用包名；`--patch` 开发文件里的 `name` 用**绝对路径**。
+`cordis.patch.yml` 里的 `name` 用包名；`--patch` 开发文件里的 `name` 用绝对 import specifier。POSIX 使用绝对路径；Windows 必须转换成 `file:///C:/.../src/index.ts` URL，不能直接写 `C:/...`，否则 Node ESM 会把 `c:` 当作不支持的协议。
 
 ### 第 4 步 · 实现
 

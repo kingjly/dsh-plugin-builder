@@ -1,0 +1,11 @@
+{
+  "name": "dsh-plugin-builder-showcase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --recursive build",
+    "test": "pnpm --recursive test",
+    "pack:plugins": "pnpm --recursive pack"
+  },
+  "packageManager": "pnpm@10.29.2"
+}

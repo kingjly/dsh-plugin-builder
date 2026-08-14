@@ -1,0 +1,6 @@
+- insert:
+    - id: showcase-greeter
+      name: 'file:///ABSOLUTE/PATH/TO/dsh-plugin-builder/showcase/dsh-greeter/src/index.ts'
+      config:
+        greeting: 'Hello, '
+        punctuation: '!'

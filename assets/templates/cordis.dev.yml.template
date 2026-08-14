@@ -1,5 +1,6 @@
 - insert:
     - id: {{ENTRY_ID}}
+      # Windows: file:///C:/...; POSIX: /absolute/path/...
       name: '{{ABSOLUTE_ENTRY}}'
       config:
         {{CONFIG_YAML}}

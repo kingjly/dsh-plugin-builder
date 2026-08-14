@@ -20,6 +20,9 @@ SECRET_RE = re.compile(
     ['\"](?!sk-xxx|your-|changeme|example|<|\$\{|process\.env)[A-Za-z0-9_\-+/=]{12,}['\"]
     """
 )
+WINDOWS_BARE_ESM_PATH_RE = re.compile(
+    r"(?m)^\s*name:\s*['\"]?[A-Za-z]:[\\/]"
+)
 APPLY_RE = re.compile(r"export\s+(?:async\s+)?function\s+apply\b|export\s+const\s+apply\b")
 NAME_RE = re.compile(r"export\s+const\s+name\s*=")
 RESERVED_TOOLS = {
@@ -105,6 +108,15 @@ def errors_for(root: Path) -> list[str]:
             continue
         if SECRET_RE.search(text) and path.name != "package.json":
             errors.append(f"疑似硬编码密钥: {path.relative_to(root)}")
+
+    dev_patch = root / "cordis.dev.yml"
+    if dev_patch.is_file():
+        text = dev_patch.read_text(encoding="utf-8")
+        if WINDOWS_BARE_ESM_PATH_RE.search(text):
+            errors.append(
+                "cordis.dev.yml 的 Windows 绝对路径必须使用 file:///C:/... URL；"
+                "裸 C:/... 会被 Node ESM 当成不支持的协议"
+            )
 
     return errors
 

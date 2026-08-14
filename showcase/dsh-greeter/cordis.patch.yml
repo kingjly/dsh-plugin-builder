@@ -1,0 +1,6 @@
+- insert:
+    - id: showcase-greeter
+      name: dsh-greeter
+      config:
+        greeting: 'Hello, '
+        punctuation: '!'

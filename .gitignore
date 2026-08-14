@@ -3,3 +3,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.local
+**/node_modules/
+**/dist/
+*.tgz
+.dsh-home/
