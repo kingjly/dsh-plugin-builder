@@ -56,14 +56,6 @@ Searching `showcase` in **Settings → Plugins → Plugin list** returns all fou
 
 These five images are direct captures from the live local service at `http://127.0.0.1:3080`; they are not generated or composited.
 
-### Generated validation report
-
-This separate image is intentionally generated from command output: the installed CLI version, four static validator runs, 16 smoke tests, and installed profile inspection.
-
-![Generated validation report for the four dsh plugins](./docs/images/showcase-validation.png)
-
-Regenerate it with `py -3 scripts/render_showcase_validation.py`.
-
 ## Install the Skill
 
 Clone the repository into a Skill directory scanned by your agent client. Keep the folder name `dsh-plugin-builder`.
@@ -197,7 +189,7 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 ├── SKILL.md                 # routing and delivery contract
 ├── assets/templates/        # ESM plugin and bundle templates
 ├── references/              # tool, guard, adapter, UI, safety, publish rules
-├── scripts/                 # overlay renderer, validator, report renderer
+├── scripts/                 # overlay renderer and static validator
 ├── showcase/                # four meaningful, tested plugins
 ├── examples/                # request fixtures
 └── evals/                   # rubric, failure taxonomy, evaluation cases

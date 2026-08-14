@@ -56,14 +56,6 @@
 
 以上五张图均直接截取自本机 `http://127.0.0.1:3080` 的实时服务，没有生成或合成。
 
-### 自动生成的验证报告
-
-下面这张图与上述界面截图不同：它明确是根据命令输出自动生成的，数据来自 CLI 版本、四个静态校验、16 个 smoke tests 和已安装 profile 检查。
-
-![四个 dsh 插件的自动生成验证报告](./docs/images/showcase-validation.png)
-
-用 `py -3 scripts/render_showcase_validation.py` 可重新生成。
-
 ## 安装 Skill
 
 把仓库克隆到智能体客户端会扫描的 Skill 目录，文件夹名保持为 `dsh-plugin-builder`：
@@ -197,7 +189,7 @@ py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-luna-pet
 ├── SKILL.md                 # 路由与交付契约
 ├── assets/templates/        # ESM 插件和 bundle 模板
 ├── references/              # 工具、guard、适配器、UI、安全与发布规则
-├── scripts/                 # overlay 渲染器、校验器、报告渲染器
+├── scripts/                 # overlay 渲染器和静态校验器
 ├── showcase/                # 四个有实际效果、已测试的插件
 ├── examples/                # 请求样例
 └── evals/                   # 评分表、失败分类、评测用例
