@@ -135,6 +135,19 @@ Windows 的 `cordis.dev.yml` 必须使用 `file:///C:/...` 形式的本地 ESM U
 
 编译、静态校验、测试、bundle 安装和 `--dump-config` 都不需要模型密钥；只有 Web 端到端对话需要已配置模型。
 
+## 热启用和停用已安装插件
+
+Skill 现在会区分运行状态与安装状态。只要插件包仍已安装，并且仍列在 `dsh.profile.bundles` 中，就可以在实际运行 profile 的 `cordis.patch.yml` 中增加精确覆盖：
+
+```yaml
+- id: showcase-aurora-ui
+  disabled: true
+```
+
+改成 `disabled: false`（或只移除该覆盖）即可重新启用。DSH 会监听用户 patch，因此 Host inventory 无需重启服务就会更新；已经打开的浏览器页面可能仍需刷新一次，才能加载或卸载 Client UI。
+
+这与 `dsh plugin add/remove` 或修改 profile `package.json` 不同：后者会改变依赖和 bundle 清单，需要重启服务。操作前必须锁定运行进程实际使用的 `DSH_HOME`，并确认 bundle 的 raw entry id；例如 inventory 中的 `include:showcase-aurora-ui` 是 Loader 路径，不一定能直接写入 patch。
+
 ## 体验实际效果
 
 安装 `dsh-aurora-ui` 后，整套 Web 界面会切到 Aurora 配色；右下角控制器可恢复原主题、切换工作区侧栏，或关闭详情面板。
@@ -188,7 +201,7 @@ py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-luna-pet
 ```text
 ├── SKILL.md                 # 路由与交付契约
 ├── assets/templates/        # ESM 插件和 bundle 模板
-├── references/              # 工具、guard、适配器、UI、安全与发布规则
+├── references/              # 工具、guard、适配器、UI、生命周期、安全与发布规则
 ├── scripts/                 # overlay 渲染器和静态校验器
 ├── showcase/                # 四个有实际效果、已测试的插件
 ├── examples/                # 请求样例
@@ -198,6 +211,8 @@ py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-luna-pet
 ## 重要限制
 
 - DeepSeek Harness 仍在开发者预览；版本变化时要重新核对官方契约。
+- 官方插件 inventory 是只读的。Skill 可以安全修改实际 profile patch，但当前设置列表本身没有启用/停用控件。
+- Host entry 可以在运行进程中热切换；已有页面可能需要刷新后才会显示或移除 Client UI。
 - `dsh-command-safety` 是策略层示例，不是完整 Shell 沙箱或审批系统。
 - `dsh-release-readiness` 把 UI 数据放入核心 `tool/result` 的 presentation metadata，以保证持久化会话可回放。
 - `dsh-aurora-ui` 在 Client 加载时激活自定义主题；Harness 只持久化它内置的主题偏好，所以插件挂载后会重新应用 Aurora，用户切换或插件卸载时会恢复原偏好。

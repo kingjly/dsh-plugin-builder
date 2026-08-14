@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-08-14
+
+- 将已有插件的识别、修改、热启用和热停用升级为 Skill 的一等任务模式，不再默认进入新包脚手架。
+- 新增 `references/plugin-lifecycle.md`：锁定实际 `DSH_HOME` / profile，区分安装、配置、启用与挂载状态，并给出 raw entry id 的安全 patch 流程。
+- 实测 rc.6 可在不重启 Host 的情况下把 Aurora inventory 切换为已停用；已打开页面需要刷新一次才卸载 Client UI，Luna 不受影响。
+- 明确 `dsh plugin add/remove` 与 profile manifest 变更不是热切换，官方 Settings inventory 仍是只读界面。
+- 增加生命周期 eval、失败分类、质量门和中英文 README 使用说明，并更新 Skill UI 元数据。
+
 ## 0.4.0 — 2026-08-14
 
 - 新增纯 Client Web UI 插件 `dsh-luna-pet`，复用用户已有 Luna 8×9 WebP 动画图集，并通过 additive `shell.overlay` 提供桌面宠物。

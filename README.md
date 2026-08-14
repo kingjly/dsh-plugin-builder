@@ -135,6 +135,19 @@ On Windows, local ESM entries in `cordis.dev.yml` must be `file:///C:/...` URLs.
 
 No model key is required for compilation, static validation, tests, bundle installation, or `--dump-config`. A configured model is required only for an end-to-end conversation.
 
+## Hot-enable and disable installed plugins
+
+The Skill now distinguishes runtime state from installation state. For a package that remains installed and listed in `dsh.profile.bundles`, add an exact entry override to the active profile's `cordis.patch.yml`:
+
+```yaml
+- id: showcase-aurora-ui
+  disabled: true
+```
+
+Set `disabled: false` (or remove only that override) to enable it again. DSH watches the user patch layer, so the Host inventory changes without restarting the service. An already-open browser page may still need one refresh to load or unload a Client UI contribution.
+
+This is different from `dsh plugin add/remove` or editing the profile `package.json`: those operations change dependencies and bundles and require a service restart. Always resolve the live process's actual `DSH_HOME` and raw bundle entry id first; an inventory id such as `include:showcase-aurora-ui` is a Loader path, not necessarily the id to write into the patch.
+
 ## Try the visible effects
 
 With `dsh-aurora-ui` installed, the complete Web UI switches to Aurora and the bottom-right controller can restore the original theme, toggle the workspace sidebar, or close the details panel.
@@ -188,7 +201,7 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 ```text
 ├── SKILL.md                 # routing and delivery contract
 ├── assets/templates/        # ESM plugin and bundle templates
-├── references/              # tool, guard, adapter, UI, safety, publish rules
+├── references/              # tool, guard, adapter, UI, lifecycle, safety, publish rules
 ├── scripts/                 # overlay renderer and static validator
 ├── showcase/                # four meaningful, tested plugins
 ├── examples/                # request fixtures
@@ -198,6 +211,8 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 ## Important limits
 
 - DeepSeek Harness is in developer preview; re-check official contracts when versions change.
+- The official plugin inventory is read-only. This Skill can safely edit the active profile patch, but the current Settings list does not expose enable/disable controls.
+- Host entries hot-switch in the running process; existing pages may require a refresh before Client UI appears or disappears.
 - `dsh-command-safety` is an example policy layer, not a complete shell sandbox or approval system.
 - `dsh-release-readiness` stores its UI payload in core `tool/result` presentation metadata so persisted sessions remain replayable.
 - `dsh-aurora-ui` activates its custom theme at runtime; Harness persists only its built-in theme preference, so the plugin re-applies Aurora when the Client bundle mounts and restores that preference when requested or unloaded.
