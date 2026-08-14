@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 — 2026-08-14
+
+- 新增纯 Client Web UI 插件 `dsh-luna-pet`，复用用户已有 Luna 8×9 WebP 动画图集，并通过 additive `shell.overlay` 提供桌面宠物。
+- Luna 支持工作、等待、审阅、巡逻和故障状态；悬停响应摸头、点击进入满足状态，并提供紧凑模式与 reduced-motion 适配。
+- 原始 `~/.codex/pets/luna` 未被修改；复制品通过 `hatch-pet` 确定性校验，并按现有素材的真实动作语义映射行 3/4。
+- Showcase 扩展为四个插件和 16 项 smoke tests，加入 Luna 实际运行截图及设置页四插件搜索截图。
+
 ## 0.3.0 — 2026-08-14
 
 - 新增纯 Client 插件 `dsh-aurora-ui`：通过 `ctx.theme.register()` 改变整套 Web 语义配色，并向 additive `shell.overlay` 加入浮动控制器。

@@ -4,7 +4,7 @@ description: 把一项能力做成可安装的 DeepSeek Harness（dsh）插件�
 license: MIT
 compatibility: Agent Skills clients such as Grok, Claude Code, and Codex. Optional: Node.js 22+, dsh CLI, Python 3.10+ for local validators.
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   generated_on: "2026-08-14"
   source_mode: "web"
   language: "zh-CN"

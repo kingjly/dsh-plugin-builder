@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SHOWCASE = ROOT / "showcase"
 OUTPUT = ROOT / "docs" / "images" / "showcase-validation.png"
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
-PLUGINS = ("dsh-aurora-ui", "dsh-release-readiness", "dsh-command-safety")
+PLUGINS = ("dsh-aurora-ui", "dsh-luna-pet", "dsh-release-readiness", "dsh-command-safety")
 
 
 def run(command: list[str], cwd: Path = ROOT, env: dict[str, str] | None = None) -> str:

@@ -20,6 +20,7 @@ def write(path: Path, text: str) -> None:
 
 def main() -> int:
     aurora = uri("dsh-aurora-ui")
+    luna = uri("dsh-luna-pet")
     readiness = uri("dsh-release-readiness")
     safety = uri("dsh-command-safety")
 
@@ -28,6 +29,8 @@ def main() -> int:
         f"""- insert:
     - id: showcase-aurora-ui
       name: '{aurora}'
+    - id: showcase-luna-pet
+      name: '{luna}'
     - id: showcase-release-readiness
       name: '{readiness}'
       config:
@@ -49,6 +52,13 @@ def main() -> int:
         f"""- insert:
     - id: showcase-aurora-ui
       name: '{aurora}'
+""",
+    )
+    write(
+        SHOWCASE / "dsh-luna-pet" / "cordis.dev.yml",
+        f"""- insert:
+    - id: showcase-luna-pet
+      name: '{luna}'
 """,
     )
     write(

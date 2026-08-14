@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
 [![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
-[![Tests](https://img.shields.io/badge/smoke_tests-12%20passing-16a34a)](./showcase)
+[![Tests](https://img.shields.io/badge/smoke_tests-16%20passing-16a34a)](./showcase)
 
 [中文文档](./README_CN.md)
 
@@ -15,11 +15,12 @@ Validated on Windows with `@deepseek-ai/dsh@0.1.0-rc.6`. Harness is still a deve
 
 ## Real, tested showcase
 
-The repository includes three plugins produced with this Skill. All are installed in the local `web` profile, visible in Settings, and tested through the actual Web UI.
+The repository includes four plugins produced with this Skill. All are installed in the local `web` profile, visible in Settings, and tested through the actual Web UI.
 
 | Package | Shape and extension point | Visible effect |
 |---|---|---|
 | [`dsh-aurora-ui`](./showcase/dsh-aurora-ui) | Pure Client Web UI; `ctx.theme.register()`, additive `shell.overlay`, and `ctx.layout` | Recolors the whole application with a cyan/violet Aurora theme and adds a floating controller for theme, sidebar, and details actions. |
+| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | Pure Client Web UI; additive `shell.overlay` with an embedded 8×9 WebP atlas | Reuses the user's existing Luna pet and adds visible work, wait, review, patrol, petting, content, and failure animations plus compact mode. |
 | [`dsh-release-readiness`](./showcase/dsh-release-readiness) | Host tool + Client Conversation Node; `ctx.tools.register()` and `conversation.chat.node` | The model submits evidence-backed gates and Chat renders a scored release dashboard with warnings and blockers. The card replays after a service restart from core `tool/result` metadata. |
 | [`dsh-command-safety`](./showcase/dsh-command-safety) | Monotonic policy guard; `ctx.tools.guard()` | Destructive-looking `bash` or `pwsh` calls are denied before the shell runs, with the matched rule shown in the conversation. |
 
@@ -28,6 +29,12 @@ The repository includes three plugins produced with this Skill. All are installe
 `dsh-aurora-ui` registers a third-party semantic theme and contributes an additive shell overlay. The real controller below switched between Aurora and the original theme, collapsed and restored the sidebar, and closed the details panel without replacing first-party shell surfaces.
 
 ![Real DeepSeek Harness Aurora Web UI plugin](./docs/images/aurora-ui.png)
+
+### Animated Luna desktop pet
+
+`dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. In this real `WORKING` capture, Luna is using her laptop; the card can switch to waiting, review, patrol, and failure states. Hovering plays her original head-pat response, clicking plays her contented response, and compact mode keeps only the pet visible.
+
+![Real DeepSeek Harness Luna pet plugin](./docs/images/luna-pet-ui.png)
 
 ### Release dashboard
 
@@ -43,17 +50,17 @@ The model attempted a `Remove-Item -Recurse -Force` probe against a path confirm
 
 ### Searchable plugin inventory
 
-Searching `showcase` in **Settings → Plugins → Plugin list** returns all three mounted and enabled entries.
+Searching `showcase` in **Settings → Plugins → Plugin list** returns all four mounted and enabled entries.
 
 ![Real DeepSeek Harness plugin inventory search](./docs/images/plugin-inventory.png)
 
-These four images are direct captures from the live local service at `http://127.0.0.1:3080`; they are not generated or composited.
+These five images are direct captures from the live local service at `http://127.0.0.1:3080`; they are not generated or composited.
 
 ### Generated validation report
 
-This separate image is intentionally generated from command output: the installed CLI version, three static validator runs, 12 smoke tests, and installed profile inspection.
+This separate image is intentionally generated from command output: the installed CLI version, four static validator runs, 16 smoke tests, and installed profile inspection.
 
-![Generated validation report for the three dsh plugins](./docs/images/showcase-validation.png)
+![Generated validation report for the four dsh plugins](./docs/images/showcase-validation.png)
 
 Regenerate it with `py -3 scripts/render_showcase_validation.py`.
 
@@ -115,17 +122,17 @@ pnpm build
 pnpm test
 ```
 
-Run all three packages from source:
+Run all four packages from source:
 
 ```powershell
 dsh web --patch ./cordis.dev.yml
 ```
 
-Or install all three into a persistent `web` profile from the repository root:
+Or install all four into a persistent `web` profile from the repository root:
 
 ```powershell
 $env:DSH_HOME = (Join-Path (Get-Location) '.dsh-home')
-dsh plugin --profile web add .\showcase\dsh-aurora-ui .\showcase\dsh-release-readiness .\showcase\dsh-command-safety
+dsh plugin --profile web add .\showcase\dsh-aurora-ui .\showcase\dsh-luna-pet .\showcase\dsh-release-readiness .\showcase\dsh-command-safety
 dsh --profile web --dump-config
 dsh web --port 3080
 ```
@@ -139,6 +146,8 @@ No model key is required for compilation, static validation, tests, bundle insta
 ## Try the visible effects
 
 With `dsh-aurora-ui` installed, the complete Web UI switches to Aurora and the bottom-right controller can restore the original theme, toggle the workspace sidebar, or close the details panel.
+
+With `dsh-luna-pet` installed, use the Luna card to select Idle, Work, Wait, Review, Patrol, or Oops. Hover Luna for her head-pat response, click her for the contented animation, and use Compact to leave only the animated pet visible.
 
 Ask the model to call `release_readiness` with explicit gates such as Build, Tests, Documentation, Screenshots, and Distribution. Each gate must be `pass`, `warn`, or `fail`; the dashboard is deterministic.
 
@@ -177,6 +186,7 @@ dsh-<slug>/
 py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-release-readiness
 py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-command-safety
 py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-aurora-ui
+py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-luna-pet
 ```
 
 The validator checks ESM and bundle metadata, entries, exported plugin contract, Schemastery config, Client metadata when present, collisions with shipped tool names, likely hard-coded credentials, and invalid bare Windows paths. It is a fast static gate; real delivery should also compile, run tests, load the overlay, inspect `--dump-config`, and exercise the Web UI.
@@ -188,7 +198,7 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 ├── assets/templates/        # ESM plugin and bundle templates
 ├── references/              # tool, guard, adapter, UI, safety, publish rules
 ├── scripts/                 # overlay renderer, validator, report renderer
-├── showcase/                # three meaningful, tested plugins
+├── showcase/                # four meaningful, tested plugins
 ├── examples/                # request fixtures
 └── evals/                   # rubric, failure taxonomy, evaluation cases
 ```
@@ -199,8 +209,9 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 - `dsh-command-safety` is an example policy layer, not a complete shell sandbox or approval system.
 - `dsh-release-readiness` stores its UI payload in core `tool/result` presentation metadata so persisted sessions remain replayable.
 - `dsh-aurora-ui` activates its custom theme at runtime; Harness persists only its built-in theme preference, so the plugin re-applies Aurora when the Client bundle mounts and restores that preference when requested or unloaded.
+- `dsh-luna-pet` embeds the validated 1.69 MB Luna WebP atlas in its Client bundle (about 2.26 MB after base64 embedding). Its row 3/4 interactions are intentionally named **petted** and **content** to match the user's existing artwork rather than generic wave/jump labels.
 - Git installs run `prepare` only when package-manager build permissions allow it. Prefer trusted, commit-pinned sources or prebuilt tarballs.
-- The three showcase packages have not been published to npm.
+- The four showcase packages have not been published to npm.
 
 ## License
 
