@@ -6,8 +6,8 @@
 
 | 点 | 用途 | 返回 |
 |---|---|---|
-| `tools/pre-execute` | 允许 / 拒绝 / 询问用户 | 类型化决策，或 `next()` |
-| `ctx.tools.guard()` | 最终单调拒绝，后面不能翻案 | 守卫 |
+| `ctx.tools.guard()` | 只做最终拒绝的单调策略 | 返回拒绝原因；放行返回 `undefined` |
+| `tools/pre-execute` | 允许 / 拒绝 / 询问用户、改写或串联 | 类型化决策，或 `next()` |
 | `tools/execute` | 超时、重试、指标；可替换 `exec.signal` | 包一层再 `next()` |
 | `tools/post-execute` | 改展示、改返回值、附加模型可见上下文 | 变换后的决策 |
 | `tools/result` | 只观察不可变最终结果 | 不要改 |
@@ -17,6 +17,24 @@
 | `fs/*` | 读前写、版本守卫等 FS 策略 | 按官方 fs 门禁 |
 
 Waterfall：**必须调用 `next()`** 才能交给下游。不调用就是短路。
+
+## 最终拒绝 guard
+
+当策略只有“命中就拒绝，否则不干预”两种结果时，优先注册 guard。它是单调约束，不会因为忘记 `next()` 而吞掉正常执行：
+
+```ts
+export function apply(ctx: Context) {
+  ctx.tools.guard((exec) => {
+    if (exec.name !== 'bash') return undefined
+    const command = String((exec.arguments as Record<string, unknown>)?.command ?? '')
+    return /\brm\s+-rf\s+\//u.test(command)
+      ? '拒绝删除根目录'
+      : undefined
+  })
+}
+```
+
+真实 transport 可能直接传对象、字符串，或把原生参数包在复合对象中。实现与测试必须覆盖实际参数形状，不能只测理想化 `{ command }`。
 
 ## 权限门禁
 
@@ -56,4 +74,4 @@ function commandOf(exec: ToolExecution): string {
 
 ## 验证
 
-准备三条路径：放行、拒绝、（若实现了）询问。拒绝必须留下模型或用户能看见的原因。
+准备三条路径：放行、拒绝、（若实现了）询问。拒绝必须留下模型或用户能看见的原因。guard 还要验证直传对象、字符串和实际复合 transport 参数中至少会用到的形态。

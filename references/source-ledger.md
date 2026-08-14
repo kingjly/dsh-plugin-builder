@@ -1,8 +1,16 @@
 # Source Ledger
 
-Build date: 2026-08-13. Source mode: `web`. Pin: `deepseek-ai/deepseek-harness@47f943859bef60e4160492346772ded9b24f765a` (`dsh@0.1.0-rc.5`).
+Build date: 2026-08-14. Source mode: `web` + installed runtime. Runtime pin: `@deepseek-ai/dsh@0.1.0-rc.6`. Official repository docs were rechecked live on 2026-08-14; the previously recorded source commit was `47f943859bef60e4160492346772ded9b24f765a` (`rc.5`).
 
 Refresh when official tutorials, `defineTool` contract, bundle manifest, or profile layering change. DSH is developer preview; prefer the live repo over this ledger.
+
+## Runtime verification
+
+- Installed `@deepseek-ai/dsh@0.1.0-rc.6` globally on Windows with Node.js 24 and pnpm 10.
+- Confirmed the `defineTool`, canonical output, `tools/pre-execute`, and bundle/profile contracts against the published `rc.6` package declarations.
+- Loaded all three showcase plugins into `dsh web --patch`; the server returned HTTP 200 on `127.0.0.1:3080`.
+- Installed all three bundles into a `showcase` profile and confirmed their layers with `--dump-config`.
+- Found and documented the Windows ESM requirement: local absolute entries must use `file:///C:/...`, not bare `C:/...`.
 
 ## Source 1
 

@@ -1,116 +1,194 @@
 # dsh-plugin-builder
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
-[![dsh](https://img.shields.io/badge/dsh-0.1.0--rc.5-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
+[![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
+[![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
+[![Tests](https://img.shields.io/badge/smoke_tests-9%20passing-16a34a)](./showcase)
 
 [中文文档](./README_CN.md)
 
-An Agent Skill that writes installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
+An Agent Skill for deciding, building, validating, and packaging installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
 
-Tell it what capability you need. It first checks the official extension points: tool, hook, adapter, or not a plugin at all. If a plugin is warranted, it writes an independent npm package (with `dsh.bundle` in `package.json`) and tells you how to load it with `--patch` or `dsh plugin add`. Selection rules live in `SKILL.md`.
+It chooses the narrowest supported extension point before generating code: tool, policy guard, provider seam, LLM adapter, Client Conversation Node, protocol bridge—or no plugin at all. Valid requests become independent TypeScript ESM packages with a `dsh.bundle`, development overlay, design record, smoke tests, and verification commands.
 
-Pinned to `dsh@0.1.0-rc.5` (`47f943859bef60e4160492346772ded9b24f765a`). dsh is a developer preview; APIs will change.
+Validated on Windows with `@deepseek-ai/dsh@0.1.0-rc.6`. Harness is still a developer preview and may introduce breaking changes.
 
-## Install
+## Real, tested showcase
 
-Clone into a skills directory your client already scans. The folder name must be `dsh-plugin-builder` and it must contain `SKILL.md`:
+The repository includes two plugins produced with this Skill. Both are installed in the local `web` profile, visible in Settings, and tested through the actual Web UI.
 
-```sh
-git clone https://github.com/kingjly/dsh-plugin-builder.git
+| Package | Shape and extension point | Visible effect |
+|---|---|---|
+| [`dsh-release-readiness`](./showcase/dsh-release-readiness) | Host tool + Client Conversation Node; `ctx.tools.register()` and `conversation.chat.node` | The model submits evidence-backed gates and Chat renders a scored release dashboard with warnings and blockers. The card replays after a service restart from core `tool/result` metadata. |
+| [`dsh-command-safety`](./showcase/dsh-command-safety) | Monotonic policy guard; `ctx.tools.guard()` | Destructive-looking `bash` or `pwsh` calls are denied before the shell runs, with the matched rule shown in the conversation. |
+
+### Release dashboard
+
+A configured third-party model called `release_readiness` with five real project gates. The plugin calculated `90/100`, rendered four passes and one warning, and the same card was verified again after restarting Harness.
+
+![Real DeepSeek Harness release-readiness dashboard](./docs/images/release-readiness-ui.png)
+
+### Command denial
+
+The model attempted a `Remove-Item -Recurse -Force` probe against a path confirmed not to exist. `dsh-command-safety` denied it before PowerShell ran and surfaced the exact matching policy.
+
+![Real DeepSeek Harness command-safety denial](./docs/images/command-safety-denial.png)
+
+### Searchable plugin inventory
+
+Searching `showcase` in **Settings → Plugins → Plugin list** returns both mounted and enabled entries.
+
+![Real DeepSeek Harness plugin inventory search](./docs/images/plugin-inventory.png)
+
+These three images are direct captures from the live local service at `http://127.0.0.1:3080`; they are not generated or composited.
+
+### Generated validation report
+
+This separate image is intentionally generated from command output: the installed CLI version, two static validator runs, nine smoke tests, and installed profile inspection.
+
+![Generated validation report for the two dsh plugins](./docs/images/showcase-validation.png)
+
+Regenerate it with `py -3 scripts/render_showcase_validation.py`.
+
+## Install the Skill
+
+Clone the repository into a Skill directory scanned by your agent client. Keep the folder name `dsh-plugin-builder`.
+
+```powershell
+git clone https://github.com/kingjly/dsh-plugin-builder.git "$HOME/.grok/skills/dsh-plugin-builder"
 ```
 
+Common locations:
+
 ```text
-~/.claude/skills/dsh-plugin-builder/     # Claude Code
 ~/.grok/skills/dsh-plugin-builder/       # Grok
-.agents/skills/dsh-plugin-builder/       # this project
+~/.claude/skills/dsh-plugin-builder/     # Claude Code
+.agents/skills/dsh-plugin-builder/       # project-local clients
 ```
 
-## Usage
+The Skill is ready when `SKILL.md` exists at the directory root.
 
-Force this skill:
+## Use it
+
+Explicit invocation:
 
 ```text
-/dsh-plugin-builder Follow the official tutorial and write a greet tool in ./dsh-greet.
+/dsh-plugin-builder Create a release-readiness tool with a replayable Web conversation card. Package it as an installable bundle and test it locally.
 ```
 
-A plain “write a dsh plugin…” may also auto-invoke it. In Grok: `/skills dsh-plugin-builder`.
+For the most precise result, state the capability and side effects, output directory, required delivery form (`--patch`, installable bundle, or both), and credential environment-variable names. Never paste live secrets into generated files.
 
-Say these up front:
+Defaults are an out-of-tree Host plugin, TypeScript ESM, the `web` profile, no agent-loop changes, and a local overlay test before installation.
 
-- what to add (not just “make a plugin”)
-- output directory
-- `--patch` first, or an installable bundle
-- env var names for secrets — do not paste live tokens
+## Decision-first workflow
 
-Defaults if you omit them: independent package, Host plane, TypeScript ESM, `web` profile, `--patch` first.
+| Request | Selected extension |
+|---|---|
+| Add a structured model capability | Tool registered with `defineTool()` |
+| Deny or constrain an existing tool call | Monotonic `ctx.tools.guard()` policy |
+| Replace filesystem, shell, search, sandbox, or subagent execution | Existing Service Provider seam |
+| Add or route a model backend | Configure `dsh-llm-pi-ai` first; write an adapter only when necessary |
+| Add a replayable Chat surface | Host result/event plus Client Conversation Node |
+| Connect an IM, IDE, or automation protocol | Protocol bridge over `ctx.agents` |
+| Modify `agent-loop`, duplicate `bash`, or rewrite an existing MCP tool | Refuse and point to the supported seam |
 
-## Examples
+Every generated package records its choice in `plugin-design.md` before implementation.
 
-**Tool** (official first tutorial)
+## Run the showcase
 
-```text
-/dsh-plugin-builder Follow the official tutorial and write a greet tool in ./dsh-greet.
+Prerequisites: Node.js 22+, pnpm, Python 3.10+, and DeepSeek Harness.
+
+```powershell
+pnpm add --global @deepseek-ai/dsh@0.1.0-rc.6
+py -3 scripts/render_showcase_overlays.py
+cd showcase
+pnpm install
+pnpm build
+pnpm test
 ```
 
-You should get a package with `dsh.bundle`. After starting the Web UI, “use greet to say hi to Ada” should call `greet`.
+Run both packages from source:
 
-**Hook** (gate the existing bash tool)
-
-```text
-/dsh-plugin-builder Deny bash if the command contains rm -rf /. Official bash is already there; do not register another.
+```powershell
+dsh web --patch ./cordis.dev.yml
 ```
 
-Normal commands still run. Dangerous ones are denied and the model sees why.
+Or install both into a persistent `web` profile from the repository root:
 
-**Model endpoint** (configure first)
-
-```text
-/dsh-plugin-builder Use the OpenAI-compatible API at https://api.example.com/v1. Key is OPENAI_API_KEY. Prefer official dsh-llm-pi-ai; do not write an adapter first.
-```
-
-Config change only. No new adapter package. No secret material in files.
-
-**MCP**
-
-```text
-/dsh-plugin-builder GitHub MCP is already running locally. Attach it to dsh.
-```
-
-Mount official `@deepseek-ai/dsh-mcp-client`, one plugin per server. Do not rewrite those tools by hand.
-
-**Not a plugin**
-
-```text
-/dsh-plugin-builder Patch agent-loop so a failed turn retries.
-```
-
-Refuse. No package. Retry on tool execution, or use the official retry / guard plugins.
-
-## After it generates
-
-Dev overlay. The plugin path in `cordis.dev.yml` must be absolute:
-
-```sh
-pnpm dsh web --patch ./cordis.dev.yml
-```
-
-On the published CLI, use `dsh` or `npx @deepseek-ai/dsh` instead of `pnpm dsh`.
-
-Install into a profile:
-
-```sh
-dsh plugin --profile web add ./dsh-greet
+```powershell
+$env:DSH_HOME = (Join-Path (Get-Location) '.dsh-home')
+dsh plugin --profile web add .\showcase\dsh-release-readiness .\showcase\dsh-command-safety
 dsh --profile web --dump-config
+dsh web --port 3080
 ```
 
-`scripts/validate_dsh_plugin.py` is a static check. It does not open the Web UI.
+Always use the same `DSH_HOME` for plugin installation and every restart. Starting once without it opens a different profile and storage root, which can make model settings and conversations appear to have disappeared even though the original data is still intact.
 
-## Do not use this skill to
+On Windows, local ESM entries in `cordis.dev.yml` must be `file:///C:/...` URLs. `render_showcase_overlays.py` regenerates portable absolute import specifiers for the current checkout.
 
-- Change `agent-loop`
-- Author a Claude / Grok `SKILL.md`
-- Build a standalone MCP server (use the official client to attach one)
-- Add a first-party package under `packages/` in `deepseek-ai/deepseek-harness`
+No model key is required for compilation, static validation, tests, bundle installation, or `--dump-config`. A configured model is required only for an end-to-end conversation.
+
+## Try the visible effects
+
+Ask the model to call `release_readiness` with explicit gates such as Build, Tests, Documentation, Screenshots, and Distribution. Each gate must be `pass`, `warn`, or `fail`; the dashboard is deterministic.
+
+For the safety demo, first confirm the probe path does not exist:
+
+```powershell
+Test-Path -LiteralPath .\__dsh_plugin_builder_nonexistent_probe__
+```
+
+Then ask the model to call `pwsh` with:
+
+```powershell
+Remove-Item -LiteralPath ".\__dsh_plugin_builder_nonexistent_probe__" -Recurse -Force
+```
+
+The policy should deny the call in Chat. The sample rule is intentionally illustrative; do not treat it as a complete sandbox.
+
+## Generated package contract
+
+```text
+dsh-<slug>/
+├── src/index.ts          # name + inject + apply + Schemastery Config
+├── src/client/index.ts   # optional Web Client Conversation Node
+├── test/smoke.test.mjs   # success, failure, and replay/guard paths
+├── cordis.dev.yml        # source overlay with absolute import specifier
+├── cordis.patch.yml      # installed bundle layer
+├── plugin-design.md      # shape decision and verification record
+├── package.json          # ESM + dsh.bundle + optional dsh.client
+├── tsconfig.json
+└── README.md
+```
+
+## Validate a generated plugin
+
+```powershell
+py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-release-readiness
+py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-command-safety
+```
+
+The validator checks ESM and bundle metadata, entries, exported plugin contract, Schemastery config, Client metadata when present, collisions with shipped tool names, likely hard-coded credentials, and invalid bare Windows paths. It is a fast static gate; real delivery should also compile, run tests, load the overlay, inspect `--dump-config`, and exercise the Web UI.
+
+## Repository map
+
+```text
+├── SKILL.md                 # routing and delivery contract
+├── assets/templates/        # ESM plugin and bundle templates
+├── references/              # tool, guard, adapter, UI, safety, publish rules
+├── scripts/                 # overlay renderer, validator, report renderer
+├── showcase/                # two meaningful, tested plugins
+├── examples/                # request fixtures
+└── evals/                   # rubric, failure taxonomy, evaluation cases
+```
+
+## Important limits
+
+- DeepSeek Harness is in developer preview; re-check official contracts when versions change.
+- `dsh-command-safety` is an example policy layer, not a complete shell sandbox or approval system.
+- `dsh-release-readiness` stores its UI payload in core `tool/result` presentation metadata so persisted sessions remain replayable.
+- Git installs run `prepare` only when package-manager build permissions allow it. Prefer trusted, commit-pinned sources or prebuilt tarballs.
+- The showcase packages have not been published to npm.
 
 ## License
 
