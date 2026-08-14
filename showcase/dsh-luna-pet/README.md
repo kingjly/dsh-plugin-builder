@@ -23,7 +23,7 @@ Use the same `DSH_HOME` for installation and every restart.
 
 The package contributes only the additive `shell.overlay` slot. Luna is rendered without a surrounding card frame, and her position is kept within the visible viewport. The plugin does not replace `root`, `sidebar`, `conversation`, or any agent-loop behavior.
 
-![Luna running in the real DeepSeek Harness Web UI](../../docs/images/luna-pet-ui.png)
+![Frameless draggable Luna in the real DeepSeek Harness Web UI](../../docs/images/luna-pet-draggable-ui.png)
 
 ## Asset provenance
 

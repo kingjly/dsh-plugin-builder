@@ -34,7 +34,7 @@
 
 `dsh-luna-pet` 直接复用用户已有的 Luna 图集，没有修改 `~/.codex/pets/luna`。下图来自真实 DSH Web，Luna 已拖离输入区域，外层不再有整块卡片框。直接拖动 Luna 即可换位置，坐标会限制在可见视口内并在刷新后恢复；浮动控件可切换空闲、工作、等待、审阅、巡逻和故障状态，悬停、点击和紧凑模式继续保留。
 
-![DeepSeek Harness Luna 桌宠插件真实截图](./docs/images/luna-pet-ui.png)
+![DeepSeek Harness 无外框可拖拽 Luna 桌宠真实截图](./docs/images/luna-pet-draggable-ui.png)
 
 ### 发布就绪面板
 

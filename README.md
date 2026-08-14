@@ -34,7 +34,7 @@ The repository includes four plugins produced with this Skill. All are installed
 
 `dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. This real DSH Web capture shows the frameless overlay after Luna was dragged away from the input area. Drag Luna herself to reposition her; the viewport-clamped position survives reloads. The controls switch among idle, work, wait, review, patrol, and failure states, while hover, click, and compact mode retain their original interactions.
 
-![Real DeepSeek Harness Luna pet plugin](./docs/images/luna-pet-ui.png)
+![Real frameless and draggable Luna pet in DeepSeek Harness](./docs/images/luna-pet-draggable-ui.png)
 
 ### Release dashboard
 
