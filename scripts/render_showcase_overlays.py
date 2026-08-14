@@ -19,12 +19,15 @@ def write(path: Path, text: str) -> None:
 
 
 def main() -> int:
+    aurora = uri("dsh-aurora-ui")
     readiness = uri("dsh-release-readiness")
     safety = uri("dsh-command-safety")
 
     write(
         SHOWCASE / "cordis.dev.yml",
         f"""- insert:
+    - id: showcase-aurora-ui
+      name: '{aurora}'
     - id: showcase-release-readiness
       name: '{readiness}'
       config:
@@ -37,8 +40,15 @@ def main() -> int:
           - pwsh
         blockedPatterns:
           - '\\brm\\s+-(?=[^\\s]*r)(?=[^\\s]*f)[^\\s]+\\s+(?:/|~|\\$HOME)(?:\\s|$)'
-          - '\\bRemove-Item\\b(?=[^\\r\\n]*\\b-Recurse\\b)(?=[^\\r\\n]*\\b-Force\\b)'
+          - '\\bRemove-Item\\b(?=[^\\r\\n]*-Recurse\\b)(?=[^\\r\\n]*-Force\\b)'
         reason: 'Blocked by the showcase command-safety policy.'
+""",
+    )
+    write(
+        SHOWCASE / "dsh-aurora-ui" / "cordis.dev.yml",
+        f"""- insert:
+    - id: showcase-aurora-ui
+      name: '{aurora}'
 """,
     )
     write(
@@ -61,7 +71,7 @@ def main() -> int:
           - pwsh
         blockedPatterns:
           - '\\brm\\s+-(?=[^\\s]*r)(?=[^\\s]*f)[^\\s]+\\s+(?:/|~|\\$HOME)(?:\\s|$)'
-          - '\\bRemove-Item\\b(?=[^\\r\\n]*\\b-Recurse\\b)(?=[^\\r\\n]*\\b-Force\\b)'
+          - '\\bRemove-Item\\b(?=[^\\r\\n]*-Recurse\\b)(?=[^\\r\\n]*-Force\\b)'
         reason: 'Blocked by the command-safety policy.'
 """,
     )

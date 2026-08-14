@@ -4,7 +4,7 @@ description: 把一项能力做成可安装的 DeepSeek Harness（dsh）插件�
 license: MIT
 compatibility: Agent Skills clients such as Grok, Claude Code, and Codex. Optional: Node.js 22+, dsh CLI, Python 3.10+ for local validators.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   generated_on: "2026-08-14"
   source_mode: "web"
   language: "zh-CN"
@@ -73,6 +73,7 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 | 需要换搜索 / 沙箱 / 子 agent 后端 | 现有 seam 的 Service Provider |
 | 模型要调用新能力 | 工具插件（默认同包，不要预防性拆 seam） |
 | 要改 Web Chat 展示 | Client 插件 + Conversation Node |
+| 要改整套 Web UI / 加 Shell 控件 | Client 插件 + 语义主题 + additive shell slot |
 | 要接 IM / IDE / ACP | 协议桥，驱动 `ctx.agents` |
 | 用户坚持改 loop | **拒绝**，指出对应扩展点 |
 
@@ -127,7 +128,8 @@ pnpm dsh web --patch ./cordis.dev.yml
 - 工具：`ctx.tools.register(defineTool({...}))`，`execute` 返回规范 JSON，`output.render` 面向模型。
 - 最终拒绝策略：`ctx.tools.guard(exec => reason | undefined)`；审批、改写或串联：`ctx.on('tools/pre-execute', async (exec, next) => ...)`。
 - 适配器：`ctx.llm.registerAdapter(['route'], adapter)`。
-- UI：注册 `ConversationNodeDefinition` + keyed renderer；Host 先落可回放事件。
+- Chat UI：注册 `ConversationNodeDefinition` + keyed renderer；Host 先落可回放事件。
+- 整体 Web UI：优先注册语义主题并追加 additive slot；不覆盖 `root` / `sidebar` / `conversation` single slot。
 
 密钥只引用环境变量名。不要把用户给的 token 写入任何生成文件。
 

@@ -29,4 +29,14 @@ Client 绝不能猜测「最近一个未完成」的节点。每条事件必须�
 
 ## 普通 UI 插件
 
-不需要 Node 时：听 `session/event`，输入用 `agent.followup()`。这够做通知、状态条、简单面板。
+不需要 Node 时，优先组合 additive slots 和已有 Client Service：
+
+- 全局浮层、状态胶囊、主题控制器 → `shell.overlay`；不要注册 `root`，否则会遮掉整个 AppFrame。
+- 会话页头按钮 → `conversation.session.header.actions` / `.utilities`。
+- 输入框上方整行面板 → `conversation.input.dock`；输入卡片内部的小控件 → `.left` / `.right`。
+- 整体配色 → `ctx.theme.register()` 注册语义 token 主题；不要靠 brittle DOM selector 重涂每个组件。
+- 侧栏与详情栏动作 → 调公开的 `ctx.layout`，不要直接改内部 store 或 DOM 宽度。
+
+普通 UI 插件仍应使用 `dsh.client.inject` 等待声明 slot 的 first-party 包。向 `shell.overlay` 这类后声明 slot 注册时，用 `ctx.slots.inject(key, () => ctx.slots.register(...))`，这样加载顺序和卸载级联都正确。
+
+需要会话事件时：听 `session/event`，输入用 `agent.followup()`。这够做通知、状态条、简单面板。

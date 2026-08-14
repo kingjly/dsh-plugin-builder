@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — 2026-08-14
+
+- 新增纯 Client 插件 `dsh-aurora-ui`：通过 `ctx.theme.register()` 改变整套 Web 语义配色，并向 additive `shell.overlay` 加入浮动控制器。
+- 控制器可恢复原主题、切换侧栏和关闭详情栏；插件不替换 `root`、`sidebar` 或 `conversation` single slot。
+- 将主题、全局浮层、布局服务和加载顺序经验回写到 `references/ui-node.md` 与静态校验器。
+- Showcase 扩展为三个插件和 12 项 smoke tests，并加入真实 Aurora Web UI 截图。
+
 ## 0.2.0 — 2026-08-14
 
 - 用本 Skill 实际生成并交付两个有明显效果的插件：带可回放 Web 卡片的 `dsh-release-readiness`，以及执行前拒绝危险 Shell 调用的 `dsh-command-safety`。
