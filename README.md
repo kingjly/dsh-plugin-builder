@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
 [![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
-[![Tests](https://img.shields.io/badge/smoke_tests-16%20passing-16a34a)](./showcase)
+[![Tests](https://img.shields.io/badge/smoke_tests-17%20passing-16a34a)](./showcase)
 
 [中文文档](./README_CN.md)
 
-An Agent Skill for deciding, building, validating, and packaging installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
+An Agent Skill for deciding, building, incrementally modifying, validating, packaging, and managing installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
 
 It chooses the narrowest supported extension point before generating code: tool, policy guard, provider seam, LLM adapter, Client Conversation Node, theme or shell contribution, protocol bridge—or no plugin at all. Valid requests become independent TypeScript ESM packages with a `dsh.bundle`, development overlay, design record, smoke tests, and verification commands.
 
@@ -85,6 +85,16 @@ Explicit invocation:
 For the most precise result, state the capability and side effects, output directory, required delivery form (`--patch`, installable bundle, or both), and credential environment-variable names. Never paste live secrets into generated files.
 
 Defaults are an out-of-tree Host plugin, TypeScript ESM, the `web` profile, no agent-loop changes, and a local overlay test before installation.
+
+### Modify an existing plugin
+
+The Skill can update an existing out-of-tree plugin without regenerating its scaffold. Point it at the package and describe the desired behavior:
+
+```text
+/dsh-plugin-builder Modify ./showcase/dsh-luna-pet: remove the outer card, make Luna draggable, persist her position, then rebuild and verify it in the real Web UI.
+```
+
+For modification tasks, the Skill first audits the current package and extension shape, then preserves the package name, raw entry id, configuration keys, and existing persistence semantics. It changes only the necessary source and documentation, reruns the static validator and package tests, and exercises the relevant Host or Client behavior. Client UI changes are checked in a fresh browser page; dependency or bundle-manifest changes still require a service restart.
 
 ## Decision-first workflow
 

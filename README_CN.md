@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
 [![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
-[![Tests](https://img.shields.io/badge/smoke_tests-16%20passing-16a34a)](./showcase)
+[![Tests](https://img.shields.io/badge/smoke_tests-17%20passing-16a34a)](./showcase)
 
 [English](./README.md)
 
-一个用于决策、创建、验证和打包 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）插件的 Agent Skill。
+一个用于决策、创建、增量修改、验证、打包和管理 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）插件的 Agent Skill。
 
 它不会直接套脚手架，而是先选择最窄、最合适的官方扩展点：工具、策略 guard、Provider seam、LLM 适配器、Client Conversation Node、主题或 Shell 贡献、协议桥，或判断根本不该做插件。确定方案后会生成独立的 TypeScript ESM 包，包含 `dsh.bundle`、开发 overlay、设计记录、smoke tests 和验证命令。
 
@@ -85,6 +85,16 @@ git clone https://github.com/kingjly/dsh-plugin-builder.git "$HOME/.grok/skills/
 提示词最好写清能力目标和副作用、输出目录、交付形式（`--patch`、可安装 bundle 或两者都要），以及凭据所用的环境变量名。不要把真实密钥写入生成文件。
 
 未指定时默认采用：树外 Host 插件、TypeScript ESM、`web` profile、不改 agent loop、先测试本地 overlay 再安装。
+
+### 修改已有插件
+
+本 Skill 可以直接增量修改已有的树外插件，不会重新铺一套脚手架。指定插件目录并描述目标即可：
+
+```text
+/dsh-plugin-builder 修改 ./showcase/dsh-luna-pet：去掉外框，让 Luna 可拖拽并保存位置，然后重新构建，在真实 Web UI 中验证。
+```
+
+修改任务会先审计现有包和扩展形态，保留包名、raw entry id、配置键以及已有持久化数据语义，只改必要的源码与文档。完成后重新执行静态校验和包测试，并按插件形态验证 Host 或 Client 行为；Client UI 会在新页面中实测，若改了依赖或 bundle manifest，仍需重启服务。
 
 ## 先决策，再生成
 
