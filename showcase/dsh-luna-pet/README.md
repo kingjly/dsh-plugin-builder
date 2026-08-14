@@ -15,11 +15,13 @@ Use the same `DSH_HOME` for installation and every restart.
 
 - hover Luna to accept a head pat;
 - click Luna to play her contented animation;
+- drag Luna herself with a mouse, pen, or touch pointer to place her anywhere in the viewport;
+- keep the chosen position across page reloads;
 - choose Idle, Work, Wait, Review, Patrol, or Oops;
 - collapse the controls into compact pet-only mode;
 - respect the operating system's reduced-motion preference.
 
-The package contributes only the additive `shell.overlay` slot. It does not replace `root`, `sidebar`, `conversation`, or any agent-loop behavior.
+The package contributes only the additive `shell.overlay` slot. Luna is rendered without a surrounding card frame, and her position is kept within the visible viewport. The plugin does not replace `root`, `sidebar`, `conversation`, or any agent-loop behavior.
 
 ![Luna running in the real DeepSeek Harness Web UI](../../docs/images/luna-pet-ui.png)
 

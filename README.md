@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
 [![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
-[![Tests](https://img.shields.io/badge/smoke_tests-16%20passing-16a34a)](./showcase)
+[![Tests](https://img.shields.io/badge/smoke_tests-17%20passing-16a34a)](./showcase)
 
 [中文文档](./README_CN.md)
 
-An Agent Skill for deciding, building, validating, and packaging installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
+An Agent Skill for deciding, building, incrementally modifying, validating, packaging, and managing installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
 
 It chooses the narrowest supported extension point before generating code: tool, policy guard, provider seam, LLM adapter, Client Conversation Node, theme or shell contribution, protocol bridge—or no plugin at all. Valid requests become independent TypeScript ESM packages with a `dsh.bundle`, development overlay, design record, smoke tests, and verification commands.
 
@@ -20,7 +20,7 @@ The repository includes four plugins produced with this Skill. All are installed
 | Package | Shape and extension point | Visible effect |
 |---|---|---|
 | [`dsh-aurora-ui`](./showcase/dsh-aurora-ui) | Pure Client Web UI; `ctx.theme.register()`, additive `shell.overlay`, and `ctx.layout` | Recolors the whole application with a cyan/violet Aurora theme and adds a floating controller for theme, sidebar, and details actions. |
-| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | Pure Client Web UI; additive `shell.overlay` with an embedded 8×9 WebP atlas | Reuses the user's existing Luna pet and adds visible work, wait, review, patrol, petting, content, and failure animations plus compact mode. |
+| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | Pure Client Web UI; additive `shell.overlay` with an embedded 8×9 WebP atlas | Reuses the user's existing Luna pet with a frameless, draggable overlay, persistent placement, nine animations, and compact mode. |
 | [`dsh-release-readiness`](./showcase/dsh-release-readiness) | Host tool + Client Conversation Node; `ctx.tools.register()` and `conversation.chat.node` | The model submits evidence-backed gates and Chat renders a scored release dashboard with warnings and blockers. The card replays after a service restart from core `tool/result` metadata. |
 | [`dsh-command-safety`](./showcase/dsh-command-safety) | Monotonic policy guard; `ctx.tools.guard()` | Destructive-looking `bash` or `pwsh` calls are denied before the shell runs, with the matched rule shown in the conversation. |
 
@@ -32,7 +32,7 @@ The repository includes four plugins produced with this Skill. All are installed
 
 ### Animated Luna desktop pet
 
-`dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. In this real `WORKING` capture, Luna is using her laptop; the card can switch to waiting, review, patrol, and failure states. Hovering plays her original head-pat response, clicking plays her contented response, and compact mode keeps only the pet visible.
+`dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. This real DSH Web capture shows the frameless overlay after Luna was dragged away from the input area. Drag Luna herself to reposition her; the viewport-clamped position survives reloads. The controls switch among idle, work, wait, review, patrol, and failure states, while hover, click, and compact mode retain their original interactions.
 
 ![Real DeepSeek Harness Luna pet plugin](./docs/images/luna-pet-ui.png)
 
@@ -85,6 +85,16 @@ Explicit invocation:
 For the most precise result, state the capability and side effects, output directory, required delivery form (`--patch`, installable bundle, or both), and credential environment-variable names. Never paste live secrets into generated files.
 
 Defaults are an out-of-tree Host plugin, TypeScript ESM, the `web` profile, no agent-loop changes, and a local overlay test before installation.
+
+### Modify an existing plugin
+
+The Skill can update an existing out-of-tree plugin without regenerating its scaffold. Point it at the package and describe the desired behavior:
+
+```text
+/dsh-plugin-builder Modify ./showcase/dsh-luna-pet: remove the outer card, make Luna draggable, persist her position, then rebuild and verify it in the real Web UI.
+```
+
+For modification tasks, the Skill first audits the current package and extension shape, then preserves the package name, raw entry id, configuration keys, and existing persistence semantics. It changes only the necessary source and documentation, reruns the static validator and package tests, and exercises the relevant Host or Client behavior. Client UI changes are checked in a fresh browser page; dependency or bundle-manifest changes still require a service restart.
 
 ## Decision-first workflow
 
@@ -152,7 +162,7 @@ This is different from `dsh plugin add/remove` or editing the profile `package.j
 
 With `dsh-aurora-ui` installed, the complete Web UI switches to Aurora and the bottom-right controller can restore the original theme, toggle the workspace sidebar, or close the details panel.
 
-With `dsh-luna-pet` installed, use the Luna card to select Idle, Work, Wait, Review, Patrol, or Oops. Hover Luna for her head-pat response, click her for the contented animation, and use Compact to leave only the animated pet visible.
+With `dsh-luna-pet` installed, drag Luna herself to move the frameless overlay; the chosen position survives reloads. Use the floating controls to select Idle, Work, Wait, Review, Patrol, or Oops. Hover Luna for her head-pat response, click her for the contented animation, and use Compact to leave only the animated pet visible.
 
 Ask the model to call `release_readiness` with explicit gates such as Build, Tests, Documentation, Screenshots, and Distribution. Each gate must be `pass`, `warn`, or `fail`; the dashboard is deterministic.
 

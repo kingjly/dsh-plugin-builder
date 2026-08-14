@@ -21,7 +21,8 @@
 
 ## Interaction contract
 
-- Luna idles in a non-blocking floating shell card.
+- Luna idles as a frameless, non-blocking shell overlay rather than inside a full-card container.
+- Dragging Luna with a mouse, pen, or touch pointer moves the overlay; the position is clamped to the viewport and persisted in browser-local storage.
 - Hovering plays Luna's original head-pat response; clicking plays her contented animation; named controls select waiting, working, review, patrol, and failed states.
 - A compact mode can hide the control labels while keeping the pet visible.
 - Reduced-motion users see a stable first frame.
@@ -37,3 +38,4 @@
 - [x] Installed `web` profile mounts `luna-pet` and remains HTTP 200.
 - [x] Real browser interaction visibly changes Luna's animation state.
 - [x] Settings → Plugins → Plugin list finds the mounted entry through `showcase` search.
+- [x] Real browser drag persists Luna's position after reload; computed styles confirm the shell has no border, background, or box shadow.

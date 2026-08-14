@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
 [![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
-[![Tests](https://img.shields.io/badge/smoke_tests-16%20passing-16a34a)](./showcase)
+[![Tests](https://img.shields.io/badge/smoke_tests-17%20passing-16a34a)](./showcase)
 
 [English](./README.md)
 
-一个用于决策、创建、验证和打包 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）插件的 Agent Skill。
+一个用于决策、创建、增量修改、验证、打包和管理 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）插件的 Agent Skill。
 
 它不会直接套脚手架，而是先选择最窄、最合适的官方扩展点：工具、策略 guard、Provider seam、LLM 适配器、Client Conversation Node、主题或 Shell 贡献、协议桥，或判断根本不该做插件。确定方案后会生成独立的 TypeScript ESM 包，包含 `dsh.bundle`、开发 overlay、设计记录、smoke tests 和验证命令。
 
@@ -20,7 +20,7 @@
 | 包 | 形态与扩展点 | 实际效果 |
 |---|---|---|
 | [`dsh-aurora-ui`](./showcase/dsh-aurora-ui) | 纯 Client Web UI；`ctx.theme.register()`、additive `shell.overlay` 与 `ctx.layout` | 把整套 Web 界面换成青/紫 Aurora 主题，并增加可切换主题、侧栏和详情面板的悬浮控制器。 |
-| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | 纯 Client Web UI；带内嵌 8×9 WebP 图集的 additive `shell.overlay` | 复用用户已有 Luna，提供工作、等待、审阅、巡逻、摸头、满足和故障动画，以及紧凑模式。 |
+| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | 纯 Client Web UI；带内嵌 8×9 WebP 图集的 additive `shell.overlay` | 复用用户已有 Luna，提供无外框可拖拽浮层、位置持久化、九种动画和紧凑模式。 |
 | [`dsh-release-readiness`](./showcase/dsh-release-readiness) | Host Tool + Client Conversation Node；`ctx.tools.register()` 与 `conversation.chat.node` | 模型提交有证据的发布门禁，Chat 直接渲染带评分、警告和阻断项的发布面板；服务重启后可从核心 `tool/result` 元数据回放。 |
 | [`dsh-command-safety`](./showcase/dsh-command-safety) | 单调策略 guard；`ctx.tools.guard()` | 带破坏性特征的 `bash`/`pwsh` 调用会在 Shell 运行前被拒绝，对话中会显示命中的规则。 |
 
@@ -32,7 +32,7 @@
 
 ### Luna 动画桌宠
 
-`dsh-luna-pet` 直接复用用户已有的 Luna 图集，没有修改 `~/.codex/pets/luna`。下图是 Luna 在真实 DSH Web 中的 `WORKING` 状态：她会使用电脑，也可切换等待、审阅、巡逻和故障状态；悬停响应摸头，点击进入满足状态，紧凑模式则只保留宠物。
+`dsh-luna-pet` 直接复用用户已有的 Luna 图集，没有修改 `~/.codex/pets/luna`。下图来自真实 DSH Web，Luna 已拖离输入区域，外层不再有整块卡片框。直接拖动 Luna 即可换位置，坐标会限制在可见视口内并在刷新后恢复；浮动控件可切换空闲、工作、等待、审阅、巡逻和故障状态，悬停、点击和紧凑模式继续保留。
 
 ![DeepSeek Harness Luna 桌宠插件真实截图](./docs/images/luna-pet-ui.png)
 
@@ -85,6 +85,16 @@ git clone https://github.com/kingjly/dsh-plugin-builder.git "$HOME/.grok/skills/
 提示词最好写清能力目标和副作用、输出目录、交付形式（`--patch`、可安装 bundle 或两者都要），以及凭据所用的环境变量名。不要把真实密钥写入生成文件。
 
 未指定时默认采用：树外 Host 插件、TypeScript ESM、`web` profile、不改 agent loop、先测试本地 overlay 再安装。
+
+### 修改已有插件
+
+本 Skill 可以直接增量修改已有的树外插件，不会重新铺一套脚手架。指定插件目录并描述目标即可：
+
+```text
+/dsh-plugin-builder 修改 ./showcase/dsh-luna-pet：去掉外框，让 Luna 可拖拽并保存位置，然后重新构建，在真实 Web UI 中验证。
+```
+
+修改任务会先审计现有包和扩展形态，保留包名、raw entry id、配置键以及已有持久化数据语义，只改必要的源码与文档。完成后重新执行静态校验和包测试，并按插件形态验证 Host 或 Client 行为；Client UI 会在新页面中实测，若改了依赖或 bundle manifest，仍需重启服务。
 
 ## 先决策，再生成
 
@@ -152,7 +162,7 @@ Skill 现在会区分运行状态与安装状态。只要插件包仍已安装�
 
 安装 `dsh-aurora-ui` 后，整套 Web 界面会切到 Aurora 配色；右下角控制器可恢复原主题、切换工作区侧栏，或关闭详情面板。
 
-安装 `dsh-luna-pet` 后，可在 Luna 卡片中选择 Idle、Work、Wait、Review、Patrol 或 Oops。悬停 Luna 会响应摸头，点击会播放满足动画，Compact 则只保留动画宠物。
+安装 `dsh-luna-pet` 后，直接拖动 Luna 即可移动无外框浮层，选择的位置在刷新后仍会保留。浮动控件可选择 Idle、Work、Wait、Review、Patrol 或 Oops；悬停 Luna 会响应摸头，点击会播放满足动画，Compact 则只保留动画宠物。
 
 让模型调用 `release_readiness`，并传入 Build、Tests、Documentation、Screenshots、Distribution 等明确门禁。每一项使用 `pass`、`warn` 或 `fail`，面板评分是确定性的。
 
