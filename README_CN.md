@@ -25,11 +25,11 @@
 
 ### DeepSeek Harness Web 真实截图
 
-下图是本机 `web` profile 安装全部三个 showcase bundle 后的真实浏览器截图。验证环境刻意没有配置模型密钥，所以保留了首次使用的 API Key 对话框。
+下图是本机 `web` profile 安装全部三个 showcase bundle 后的真实浏览器截图。已配置的第三方 `opencode-go / DeepSeek V4 Flash` 模型实际调用了 `greet` 和 `text_metrics`，图中的 Tool call 行与结构化结果均来自这次真实会话。
 
 ![运行 showcase profile 的 DeepSeek Harness Web 真实截图](./docs/images/deepseek-harness-web.png)
 
-这张图没有经过生成或合成。Tool 和 Hook 插件不会自动获得独立的 Web Settings 卡片，因此插件加载证据在下方单独展示。
+这张图没有经过生成或合成。Tool 和 Hook 插件不会自动获得独立的 Web Settings 卡片；纯策略插件 `dsh-command-safety` 的证据由 smoke tests 和下方验证报告提供。
 
 ### 自动生成的验证报告图
 
