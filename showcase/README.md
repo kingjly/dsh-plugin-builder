@@ -5,7 +5,7 @@ These four independent packages were produced by following the repository's `SKI
 | Package | Shape | Mount point | Visible effect |
 |---|---|---|---|
 | `dsh-aurora-ui` | Pure Client Web UI | `ctx.theme.register()`, `shell.overlay`, `ctx.layout` | A whole-app Aurora palette plus a floating, interactive shell controller |
-| `dsh-luna-pet` | Pure Client Web UI | additive `shell.overlay` | The user's existing animated Luna pet with work, wait, review, patrol, petting, content, and failure states |
+| `dsh-luna-pet` | Pure Client Web UI | additive `shell.overlay` | Frameless draggable Luna pet with persistent placement, compact mode, and nine animation states |
 | `dsh-release-readiness` | Host Tool + Client Conversation Node | `ctx.tools.register()`, core `tool/result.meta`, keyed `conversation.chat.node` renderer | A scored, replayable release dashboard with warnings and blockers |
 | `dsh-command-safety` | Policy guard | `ctx.tools.guard()` | A typed denial prevents a matching destructive shell call from executing |
 

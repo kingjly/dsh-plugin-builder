@@ -20,7 +20,7 @@ The repository includes four plugins produced with this Skill. All are installed
 | Package | Shape and extension point | Visible effect |
 |---|---|---|
 | [`dsh-aurora-ui`](./showcase/dsh-aurora-ui) | Pure Client Web UI; `ctx.theme.register()`, additive `shell.overlay`, and `ctx.layout` | Recolors the whole application with a cyan/violet Aurora theme and adds a floating controller for theme, sidebar, and details actions. |
-| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | Pure Client Web UI; additive `shell.overlay` with an embedded 8×9 WebP atlas | Reuses the user's existing Luna pet and adds visible work, wait, review, patrol, petting, content, and failure animations plus compact mode. |
+| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | Pure Client Web UI; additive `shell.overlay` with an embedded 8×9 WebP atlas | Reuses the user's existing Luna pet with a frameless, draggable overlay, persistent placement, nine animations, and compact mode. |
 | [`dsh-release-readiness`](./showcase/dsh-release-readiness) | Host tool + Client Conversation Node; `ctx.tools.register()` and `conversation.chat.node` | The model submits evidence-backed gates and Chat renders a scored release dashboard with warnings and blockers. The card replays after a service restart from core `tool/result` metadata. |
 | [`dsh-command-safety`](./showcase/dsh-command-safety) | Monotonic policy guard; `ctx.tools.guard()` | Destructive-looking `bash` or `pwsh` calls are denied before the shell runs, with the matched rule shown in the conversation. |
 
@@ -32,7 +32,7 @@ The repository includes four plugins produced with this Skill. All are installed
 
 ### Animated Luna desktop pet
 
-`dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. In this real `WORKING` capture, Luna is using her laptop; the card can switch to waiting, review, patrol, and failure states. Hovering plays her original head-pat response, clicking plays her contented response, and compact mode keeps only the pet visible.
+`dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. This real DSH Web capture shows the frameless overlay after Luna was dragged away from the input area. Drag Luna herself to reposition her; the viewport-clamped position survives reloads. The controls switch among idle, work, wait, review, patrol, and failure states, while hover, click, and compact mode retain their original interactions.
 
 ![Real DeepSeek Harness Luna pet plugin](./docs/images/luna-pet-ui.png)
 
@@ -152,7 +152,7 @@ This is different from `dsh plugin add/remove` or editing the profile `package.j
 
 With `dsh-aurora-ui` installed, the complete Web UI switches to Aurora and the bottom-right controller can restore the original theme, toggle the workspace sidebar, or close the details panel.
 
-With `dsh-luna-pet` installed, use the Luna card to select Idle, Work, Wait, Review, Patrol, or Oops. Hover Luna for her head-pat response, click her for the contented animation, and use Compact to leave only the animated pet visible.
+With `dsh-luna-pet` installed, drag Luna herself to move the frameless overlay; the chosen position survives reloads. Use the floating controls to select Idle, Work, Wait, Review, Patrol, or Oops. Hover Luna for her head-pat response, click her for the contented animation, and use Compact to leave only the animated pet visible.
 
 Ask the model to call `release_readiness` with explicit gates such as Build, Tests, Documentation, Screenshots, and Distribution. Each gate must be `pass`, `warn`, or `fail`; the dashboard is deterministic.
 
