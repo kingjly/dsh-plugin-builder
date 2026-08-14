@@ -121,6 +121,11 @@ def errors_for(root: Path) -> list[str]:
                 errors.append("src/client/index.ts 未导出 apply")
             if "conversationEvents.register" in text and "conversation.chat.node" not in text:
                 errors.append("Conversation Node 已注册 Definition，但没有注册 keyed Chat renderer")
+            client_inject = client.get("inject") if isinstance(client, dict) else []
+            if "ctx.theme.register" in text and "@deepseek-ai/dsh-client-ui-theme" not in client_inject:
+                errors.append("主题插件调用 ctx.theme.register，但 dsh.client.inject 未声明 ui-theme")
+            if "shell.overlay" in text and "@deepseek-ai/dsh-client-ui-layout" not in client_inject:
+                errors.append("插件使用 shell.overlay，但 dsh.client.inject 未声明 ui-layout")
 
     for path in root.rglob("*"):
         if path.suffix.lower() not in {".ts", ".js", ".yml", ".yaml", ".json", ".md"}:

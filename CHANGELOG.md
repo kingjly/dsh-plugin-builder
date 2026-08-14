@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.5.0 — 2026-08-14
+
+- 将已有插件的识别、修改、热启用和热停用升级为 Skill 的一等任务模式，不再默认进入新包脚手架。
+- 新增 `references/plugin-lifecycle.md`：锁定实际 `DSH_HOME` / profile，区分安装、配置、启用与挂载状态，并给出 raw entry id 的安全 patch 流程。
+- 实测 rc.6 可在不重启 Host 的情况下把 Aurora inventory 切换为已停用；已打开页面需要刷新一次才卸载 Client UI，Luna 不受影响。
+- 明确 `dsh plugin add/remove` 与 profile manifest 变更不是热切换，官方 Settings inventory 仍是只读界面。
+- 增加生命周期 eval、失败分类、质量门和中英文 README 使用说明，并更新 Skill UI 元数据。
+
+## 0.4.0 — 2026-08-14
+
+- 新增纯 Client Web UI 插件 `dsh-luna-pet`，复用用户已有 Luna 8×9 WebP 动画图集，并通过 additive `shell.overlay` 提供桌面宠物。
+- Luna 支持工作、等待、审阅、巡逻和故障状态；悬停响应摸头、点击进入满足状态，并提供紧凑模式与 reduced-motion 适配。
+- 原始 `~/.codex/pets/luna` 未被修改；复制品通过 `hatch-pet` 确定性校验，并按现有素材的真实动作语义映射行 3/4。
+- Showcase 扩展为四个插件和 16 项 smoke tests，加入 Luna 实际运行截图及设置页四插件搜索截图。
+- README 只保留真实 DSH Web 截图；移除命令输出生成的验证图及其生成脚本。
+
+## 0.3.0 — 2026-08-14
+
+- 新增纯 Client 插件 `dsh-aurora-ui`：通过 `ctx.theme.register()` 改变整套 Web 语义配色，并向 additive `shell.overlay` 加入浮动控制器。
+- 控制器可恢复原主题、切换侧栏和关闭详情栏；插件不替换 `root`、`sidebar` 或 `conversation` single slot。
+- 将主题、全局浮层、布局服务和加载顺序经验回写到 `references/ui-node.md` 与静态校验器。
+- Showcase 扩展为三个插件和 12 项 smoke tests，并加入真实 Aurora Web UI 截图。
+
 ## 0.2.0 — 2026-08-14
 
 - 用本 Skill 实际生成并交付两个有明显效果的插件：带可回放 Web 卡片的 `dsh-release-readiness`，以及执行前拒绝危险 Shell 调用的 `dsh-command-safety`。

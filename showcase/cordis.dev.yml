@@ -1,4 +1,8 @@
 - insert:
+    - id: showcase-aurora-ui
+      name: 'file:///C:/Users/kingjly/.grok/skills/dsh-plugin-builder/showcase/dsh-aurora-ui/src/index.ts'
+    - id: showcase-luna-pet
+      name: 'file:///C:/Users/kingjly/.grok/skills/dsh-plugin-builder/showcase/dsh-luna-pet/src/index.ts'
     - id: showcase-release-readiness
       name: 'file:///C:/Users/kingjly/.grok/skills/dsh-plugin-builder/showcase/dsh-release-readiness/src/index.ts'
       config:
@@ -11,5 +15,5 @@
           - pwsh
         blockedPatterns:
           - '\brm\s+-(?=[^\s]*r)(?=[^\s]*f)[^\s]+\s+(?:/|~|\$HOME)(?:\s|$)'
-          - '\bRemove-Item\b(?=[^\r\n]*\b-Recurse\b)(?=[^\r\n]*\b-Force\b)'
+          - '\bRemove-Item\b(?=[^\r\n]*-Recurse\b)(?=[^\r\n]*-Force\b)'
         reason: 'Blocked by the showcase command-safety policy.'

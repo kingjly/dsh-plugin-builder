@@ -8,3 +8,5 @@ Thumbs.db
 **/lib/
 *.tgz
 .dsh-home/
+.pet-runs/
+.playwright-mcp/

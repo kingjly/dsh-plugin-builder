@@ -51,6 +51,8 @@ dsh --profile web
 
 `dsh plugin --profile web remove dsh-hello-plugin` 同时去掉依赖和层。
 
+`add/remove` 修改安装清单，不是运行时开关。要启停仍然安装的 entry，读 `plugin-lifecycle.md`，通过实际 profile 的用户 patch 控制 `disabled`。
+
 ## 层顺序（后写的整行胜出）
 
 1. profile 列出的各 bundle patch（先 `@deepseek-ai/dsh-base`）

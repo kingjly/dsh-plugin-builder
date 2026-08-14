@@ -8,9 +8,10 @@ Refresh when official tutorials, `defineTool` contract, bundle manifest, or prof
 
 - Installed `@deepseek-ai/dsh@0.1.0-rc.6` globally on Windows with Node.js 24 and pnpm 10.
 - Confirmed the `defineTool`, canonical output, `tools/pre-execute`, and bundle/profile contracts against the published `rc.6` package declarations.
-- Loaded all three showcase plugins into `dsh web --patch`; the server returned HTTP 200 on `127.0.0.1:3080`.
-- Installed all three bundles into a `showcase` profile and confirmed their layers with `--dump-config`.
+- Loaded all four showcase plugins into `dsh web`; the server returned HTTP 200 on `127.0.0.1:3080`.
+- Installed all four bundles into local profiles and confirmed their layers with `--dump-config` and the live Settings inventory.
 - Found and documented the Windows ESM requirement: local absolute entries must use `file:///C:/...`, not bare `C:/...`.
+- Confirmed rc.6 watches profile `cordis.patch.yml`: setting a raw entry id to `disabled: true` changed the live Host inventory to disabled without restarting the process. The already-open Web page retained its Client contribution until refresh; after refresh Aurora disappeared and Luna remained.
 
 ## Source 1
 
@@ -91,6 +92,16 @@ Refresh when official tutorials, `defineTool` contract, bundle manifest, or prof
 - Why trusted: harness invariants
 - Operational claims used: registrations are effects; waterfall must call `next()`; no hardcoded tunables; misconfiguration fails loud
 - Limitations: written for first-party agents contributing to the repo
+
+## Source 9
+
+- Title: installed `dsh-app-boot`, `cordis-plugin-loader`, `cordis-plugin-hmr`, and plugin inventory packages
+- Type: published rc.6 runtime source and live verification
+- Date accessed: 2026-08-14
+- Authority: 2 / Freshness: 2 / Relevance: 2 / Operational: 2
+- Why trusted: exact packages executing in the tested local service
+- Operational claims used: profile and home patch files are watched; `disabled` disposes or initializes Loader entries; inventory is read-only; Client UI may require refresh after Host state changes
+- Limitations: preview behavior may change after rc.6
 
 ## Not used as authority
 

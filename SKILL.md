@@ -1,19 +1,11 @@
 ---
 name: dsh-plugin-builder
-description: 把一项能力做成可安装的 DeepSeek Harness（dsh）插件。覆盖全流程：判定插件形态 → 选官方扩展点 → 生成 ESM 插件与 bundle → 本地 --patch 验证 → dsh plugin add 安装。用于：写 dsh 工具/钩子/LLM 适配器/UI 节点/提供方、制作 dsh-plugin、写 cordis.yml / cordis.patch.yml、打包 profile 组合包。触发词包括「做 dsh 插件」「写 DeepSeek Harness 插件」「dsh plugin add」「defineTool」「一切皆插件」「Cordis 插件」。不用于：改 agent-loop、写 Claude/Grok Skill、单独封装 MCP server（先走 mcp-factory，再用官方 mcp-client 接入）。
-license: MIT
-compatibility: Agent Skills clients such as Grok, Claude Code, and Codex. Optional: Node.js 22+, dsh CLI, Python 3.10+ for local validators.
-metadata:
-  version: "0.2.0"
-  generated_on: "2026-08-14"
-  source_mode: "web"
-  language: "zh-CN"
-  dsh_pin: "@deepseek-ai/dsh@0.1.0-rc.6; official docs checked on 2026-08-14"
+description: 构建、修改、验证和管理 DeepSeek Harness（dsh）树外插件。覆盖插件形态决策、官方扩展点选择、TypeScript ESM 与 bundle 生成、已有插件增量修改、本地 --patch 验证、dsh plugin 安装，以及已安装插件的来源识别、热启用和热停用。用于用户提到 dsh 插件、DeepSeek Harness 插件、defineTool、Cordis 插件、dsh.bundle、cordis.yml、cordis.patch.yml、dsh plugin add/remove、插件已启用/已停用、热加载、热卸载或想控制现有插件状态时。不用于修改 agent-loop、编写 Agent Skill，或单独构建 MCP server。
 ---
 
-# DSH 插件制作
+# DSH 插件构建与维护
 
-把用户要的能力做成**树外可安装组合包**（`dsh.bundle` + `dsh plugin add`）。默认不要往 `deepseek-harness` 仓库里加 first-party 包。
+把用户要的能力做成**树外可安装组合包**（`dsh.bundle` + `dsh plugin add`），或安全地修改、启停已经安装的插件。默认不要往 `deepseek-harness` 仓库里加 first-party 包。
 
 DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官方文档复核，不要把本 skill 里的 API 当成永久契约。
 
@@ -23,16 +15,11 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 - **不改循环**：新行为挂已文档化的扩展点。改 `agent-loop` 不在本 skill 范围。
 - **树外优先**：用户插件是独立 npm 包，不是 `packages/<group>/<pkg>`。
 - **注册即副作用**：工具、监听、定时器走 `ctx.effect()` / `ctx.on()` / `register()`；卸载必须可逆。
+- **生命周期分层**：`cordis.patch.yml` 控制已安装条目的运行状态；依赖和 bundle 清单变更属于安装层，通常需要重启。
 - **密钥不进仓库**：凭据走环境变量或 `ctx.credentials`，配置里只写引用名。
 - **渐进披露**：本文件只放流程；细节按任务读 `references/`。
 
-## 何时使用
-
-- 用户要把搜索、审批、通知、浏览器、记忆、IM 桥、皮肤、侧栏等做成 dsh 插件。
-- 用户提到 `dsh plugin add`、`cordis.yml`、`defineTool`、`dsh.bundle`、`dsh-plugin`。
-- 用户要给现有官方 seam 换提供方（`ctx.llm` / `ctx.web` / `ctx.fs` / `ctx.subagents`）。
-
-## 何时不用
+## 职责边界
 
 - 改 agent loop、fork 官方循环实现 → 拒绝，改挂扩展点。
 - 写 Agent Skill / SKILL.md → 用 skill-factory。
@@ -45,12 +32,14 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 开始前抓住这些（缺了会改变产物形态的才追问）：
 
 1. **要解决的事**：一句话目标，不是「写个插件」。
-2. **形态偏好**：工具 / 钩子 / 提供方 / UI / 协议桥 / 未定。
-3. **加载面**：Host（默认，agent 进程）还是 Client（浏览器）。
-4. **交付方式**：本地 `--patch` 试跑，还是可安装 bundle。
-5. **密钥**：有哪些，环境变量名是什么。
+2. **任务模式**：新建 / 修改 / 启用 / 停用 / 安装 / 卸载。
+3. **形态偏好**：工具 / 钩子 / 提供方 / UI / 协议桥 / 未定。
+4. **加载面**：Host（默认，agent 进程）还是 Client（浏览器）。
+5. **运行位置**：实际 `DSH_HOME`、profile 名和服务进程；不要默认使用 `~/.dsh`。
+6. **交付方式**：本地 `--patch` 试跑，还是可安装 bundle。
+7. **密钥**：有哪些，环境变量名是什么。
 
-未指定时默认：树外 Host 插件、TypeScript ESM、Web profile、先 `--patch` 再打包。
+新建任务未指定时默认：树外 Host 插件、TypeScript ESM、Web profile、先 `--patch` 再打包。生命周期任务先查明正在运行的 home/profile，不猜路径。
 
 ## 工作流
 
@@ -58,7 +47,19 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 
 ### 第 0 步 · Intake
 
-写成一行 brief：目标 + 形态假设 + Host/Client + 密钥。
+写成一行 brief：目标 + 任务模式 + 形态假设 + Host/Client + home/profile + 密钥。
+
+### 生命周期分支 · 已有插件的识别、启停与卸载
+
+任务是识别来源、启用、停用、安装或卸载已有插件时，**先读 `references/plugin-lifecycle.md`**：
+
+1. 锁定运行服务真正使用的 `DSH_HOME` 与 profile；同时检查 profile manifest、profile/home 两级用户 patch 和实时 inventory。
+2. 区分运行状态与安装状态：已安装条目的启停写 profile 的 `cordis.patch.yml`；依赖增删走 `dsh plugin`。
+3. 热启停只修改精确 raw entry id 的 `disabled` 覆盖，不改 bundle 源文件，不删除依赖。
+4. 先验证 Host inventory；Client 插件在已打开页面里可能要刷新一次才会加载或卸载 UI。
+5. 安装、卸载或修改 `dsh.profile.bundles` 后重启服务，并复核使用了同一个 `DSH_HOME`。
+
+只做生命周期操作时完成该分支后直接按输出契约交付，不进入脚手架。需要修改插件代码时，先审计已有包并保留包名、entry id、配置键和持久化数据语义，再继续第 1 步。
 
 ### 第 1 步 · 形态决策门（不可跳过）
 
@@ -73,6 +74,7 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 | 需要换搜索 / 沙箱 / 子 agent 后端 | 现有 seam 的 Service Provider |
 | 模型要调用新能力 | 工具插件（默认同包，不要预防性拆 seam） |
 | 要改 Web Chat 展示 | Client 插件 + Conversation Node |
+| 要改整套 Web UI / 加 Shell 控件 | Client 插件 + 语义主题 + additive shell slot |
 | 要接 IM / IDE / ACP | 协议桥，驱动 `ctx.agents` |
 | 用户坚持改 loop | **拒绝**，指出对应扩展点 |
 
@@ -101,7 +103,7 @@ DSH 处于开发者预览，**会破兼容**。生成物必须能对照当前官
 
 ### 第 3 步 · 脚手架
 
-在用户指定目录生成最小包（默认包名 `dsh-<slug>`）：
+仅新建插件时，在用户指定目录生成最小包（默认包名 `dsh-<slug>`）。已有插件只增量修改目标文件，不重新铺脚手架：
 
 ```text
 <pkg>/
@@ -127,7 +129,8 @@ pnpm dsh web --patch ./cordis.dev.yml
 - 工具：`ctx.tools.register(defineTool({...}))`，`execute` 返回规范 JSON，`output.render` 面向模型。
 - 最终拒绝策略：`ctx.tools.guard(exec => reason | undefined)`；审批、改写或串联：`ctx.on('tools/pre-execute', async (exec, next) => ...)`。
 - 适配器：`ctx.llm.registerAdapter(['route'], adapter)`。
-- UI：注册 `ConversationNodeDefinition` + keyed renderer；Host 先落可回放事件。
+- Chat UI：注册 `ConversationNodeDefinition` + keyed renderer；Host 先落可回放事件。
+- 整体 Web UI：优先注册语义主题并追加 additive slot；不覆盖 `root` / `sidebar` / `conversation` single slot。
 
 密钥只引用环境变量名。不要把用户给的 token 写入任何生成文件。
 
@@ -137,7 +140,8 @@ pnpm dsh web --patch ./cordis.dev.yml
 2. 能从源码跑 dsh 时：`--patch` 启动，确认加载日志，再让模型走一条成功路径。
 3. 工具插件至少证明：schema 出现、一次成功调用、一次非法参数失败。
 4. 策略插件至少证明：拒绝路径和放行路径；guard 还要覆盖实际 transport 的参数形状。
-5. 自测失败先修，再交付。
+5. Client 插件至少证明：新页面加载成功、卸载副作用可逆；若做生命周期操作，同时验证 inventory 状态和刷新后的 UI。
+6. 自测失败先修，再交付。
 
 ### 第 6 步 · 打包安装
 
@@ -162,6 +166,8 @@ Git 安装必须有自包含 `prepare`，用户还要在 profile 的 `pnpm-works
 4. **自测结果**（做了什么、没做什么）。
 5. **已知局限**（预览破兼容、Settings 白名单、preset 不能注册 settings 命名空间等）。
 
+生命周期任务改为返回：实际 home/profile、目标 entry id、修改的 patch、Host inventory 前后状态、是否重启、Client 是否需要刷新，以及恢复原状态的方法。
+
 判定「不做插件」时，只返回替代方案和理由。
 
 ## 质量门
@@ -172,6 +178,9 @@ Git 安装必须有自包含 `prepare`，用户还要在 profile 的 `pnpm-works
 - [ ] `validate_dsh_plugin.py` 通过；无硬编码密钥。
 - [ ] 工具有规范 `output.schema`；guard 的放行返回 `undefined`，waterfall 的放行调用 `next()`。
 - [ ] 可调参数在 `Config`；误配会在加载失败。
+- [ ] 生命周期操作命中了实际运行的 `DSH_HOME` / profile，没有根据默认目录猜测。
+- [ ] 热启停写用户 `cordis.patch.yml`，没有把 `package.json` 或 `dsh plugin remove` 当成热停用。
+- [ ] 已验证 Host inventory；Client 插件另验证刷新后的 UI，且未误伤其他插件。
 
 ## 渐进式引用
 
@@ -183,6 +192,7 @@ Git 安装必须有自包含 `prepare`，用户还要在 profile 的 `pnpm-works
 | 接新模型厂 | `references/llm-adapter.md` |
 | Chat 节点 / Client 插件 | `references/ui-node.md` |
 | bundle / profile / git prepare | `references/publish-profile.md` |
+| 已有插件来源、热启停、卸载、UI 刷新 | `references/plugin-lifecycle.md` |
 | 密钥、审批、危险能力 | `references/safety.md` |
 | 给官方仓库加包 | `references/first-party-monorepo.md` |
 | 查证来源 | `references/source-ledger.md` |

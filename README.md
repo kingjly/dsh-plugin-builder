@@ -3,24 +3,38 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.txt)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-4f46e5)](https://github.com/deepseek-ai/deepseek-harness)
 [![Agent Skill](https://img.shields.io/badge/Agent_Skill-Grok%20%7C%20Claude%20%7C%20Codex-0ea5e9)](./SKILL.md)
-[![Tests](https://img.shields.io/badge/smoke_tests-9%20passing-16a34a)](./showcase)
+[![Tests](https://img.shields.io/badge/smoke_tests-16%20passing-16a34a)](./showcase)
 
 [中文文档](./README_CN.md)
 
 An Agent Skill for deciding, building, validating, and packaging installable [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins.
 
-It chooses the narrowest supported extension point before generating code: tool, policy guard, provider seam, LLM adapter, Client Conversation Node, protocol bridge—or no plugin at all. Valid requests become independent TypeScript ESM packages with a `dsh.bundle`, development overlay, design record, smoke tests, and verification commands.
+It chooses the narrowest supported extension point before generating code: tool, policy guard, provider seam, LLM adapter, Client Conversation Node, theme or shell contribution, protocol bridge—or no plugin at all. Valid requests become independent TypeScript ESM packages with a `dsh.bundle`, development overlay, design record, smoke tests, and verification commands.
 
 Validated on Windows with `@deepseek-ai/dsh@0.1.0-rc.6`. Harness is still a developer preview and may introduce breaking changes.
 
 ## Real, tested showcase
 
-The repository includes two plugins produced with this Skill. Both are installed in the local `web` profile, visible in Settings, and tested through the actual Web UI.
+The repository includes four plugins produced with this Skill. All are installed in the local `web` profile, visible in Settings, and tested through the actual Web UI.
 
 | Package | Shape and extension point | Visible effect |
 |---|---|---|
+| [`dsh-aurora-ui`](./showcase/dsh-aurora-ui) | Pure Client Web UI; `ctx.theme.register()`, additive `shell.overlay`, and `ctx.layout` | Recolors the whole application with a cyan/violet Aurora theme and adds a floating controller for theme, sidebar, and details actions. |
+| [`dsh-luna-pet`](./showcase/dsh-luna-pet) | Pure Client Web UI; additive `shell.overlay` with an embedded 8×9 WebP atlas | Reuses the user's existing Luna pet and adds visible work, wait, review, patrol, petting, content, and failure animations plus compact mode. |
 | [`dsh-release-readiness`](./showcase/dsh-release-readiness) | Host tool + Client Conversation Node; `ctx.tools.register()` and `conversation.chat.node` | The model submits evidence-backed gates and Chat renders a scored release dashboard with warnings and blockers. The card replays after a service restart from core `tool/result` metadata. |
 | [`dsh-command-safety`](./showcase/dsh-command-safety) | Monotonic policy guard; `ctx.tools.guard()` | Destructive-looking `bash` or `pwsh` calls are denied before the shell runs, with the matched rule shown in the conversation. |
+
+### Whole-app Aurora workbench
+
+`dsh-aurora-ui` registers a third-party semantic theme and contributes an additive shell overlay. The real controller below switched between Aurora and the original theme, collapsed and restored the sidebar, and closed the details panel without replacing first-party shell surfaces.
+
+![Real DeepSeek Harness Aurora Web UI plugin](./docs/images/aurora-ui.png)
+
+### Animated Luna desktop pet
+
+`dsh-luna-pet` reuses the user's existing Luna atlas without modifying `~/.codex/pets/luna`. In this real `WORKING` capture, Luna is using her laptop; the card can switch to waiting, review, patrol, and failure states. Hovering plays her original head-pat response, clicking plays her contented response, and compact mode keeps only the pet visible.
+
+![Real DeepSeek Harness Luna pet plugin](./docs/images/luna-pet-ui.png)
 
 ### Release dashboard
 
@@ -36,19 +50,11 @@ The model attempted a `Remove-Item -Recurse -Force` probe against a path confirm
 
 ### Searchable plugin inventory
 
-Searching `showcase` in **Settings → Plugins → Plugin list** returns both mounted and enabled entries.
+Searching `showcase` in **Settings → Plugins → Plugin list** returns all four mounted and enabled entries.
 
 ![Real DeepSeek Harness plugin inventory search](./docs/images/plugin-inventory.png)
 
-These three images are direct captures from the live local service at `http://127.0.0.1:3080`; they are not generated or composited.
-
-### Generated validation report
-
-This separate image is intentionally generated from command output: the installed CLI version, two static validator runs, nine smoke tests, and installed profile inspection.
-
-![Generated validation report for the two dsh plugins](./docs/images/showcase-validation.png)
-
-Regenerate it with `py -3 scripts/render_showcase_validation.py`.
+These five images are direct captures from the live local service at `http://127.0.0.1:3080`; they are not generated or composited.
 
 ## Install the Skill
 
@@ -89,6 +95,7 @@ Defaults are an out-of-tree Host plugin, TypeScript ESM, the `web` profile, no a
 | Replace filesystem, shell, search, sandbox, or subagent execution | Existing Service Provider seam |
 | Add or route a model backend | Configure `dsh-llm-pi-ai` first; write an adapter only when necessary |
 | Add a replayable Chat surface | Host result/event plus Client Conversation Node |
+| Change the whole Web UI or add shell controls | Client plugin using a semantic theme and additive shell slot |
 | Connect an IM, IDE, or automation protocol | Protocol bridge over `ctx.agents` |
 | Modify `agent-loop`, duplicate `bash`, or rewrite an existing MCP tool | Refuse and point to the supported seam |
 
@@ -107,17 +114,17 @@ pnpm build
 pnpm test
 ```
 
-Run both packages from source:
+Run all four packages from source:
 
 ```powershell
 dsh web --patch ./cordis.dev.yml
 ```
 
-Or install both into a persistent `web` profile from the repository root:
+Or install all four into a persistent `web` profile from the repository root:
 
 ```powershell
 $env:DSH_HOME = (Join-Path (Get-Location) '.dsh-home')
-dsh plugin --profile web add .\showcase\dsh-release-readiness .\showcase\dsh-command-safety
+dsh plugin --profile web add .\showcase\dsh-aurora-ui .\showcase\dsh-luna-pet .\showcase\dsh-release-readiness .\showcase\dsh-command-safety
 dsh --profile web --dump-config
 dsh web --port 3080
 ```
@@ -128,7 +135,24 @@ On Windows, local ESM entries in `cordis.dev.yml` must be `file:///C:/...` URLs.
 
 No model key is required for compilation, static validation, tests, bundle installation, or `--dump-config`. A configured model is required only for an end-to-end conversation.
 
+## Hot-enable and disable installed plugins
+
+The Skill now distinguishes runtime state from installation state. For a package that remains installed and listed in `dsh.profile.bundles`, add an exact entry override to the active profile's `cordis.patch.yml`:
+
+```yaml
+- id: showcase-aurora-ui
+  disabled: true
+```
+
+Set `disabled: false` (or remove only that override) to enable it again. DSH watches the user patch layer, so the Host inventory changes without restarting the service. An already-open browser page may still need one refresh to load or unload a Client UI contribution.
+
+This is different from `dsh plugin add/remove` or editing the profile `package.json`: those operations change dependencies and bundles and require a service restart. Always resolve the live process's actual `DSH_HOME` and raw bundle entry id first; an inventory id such as `include:showcase-aurora-ui` is a Loader path, not necessarily the id to write into the patch.
+
 ## Try the visible effects
+
+With `dsh-aurora-ui` installed, the complete Web UI switches to Aurora and the bottom-right controller can restore the original theme, toggle the workspace sidebar, or close the details panel.
+
+With `dsh-luna-pet` installed, use the Luna card to select Idle, Work, Wait, Review, Patrol, or Oops. Hover Luna for her head-pat response, click her for the contented animation, and use Compact to leave only the animated pet visible.
 
 Ask the model to call `release_readiness` with explicit gates such as Build, Tests, Documentation, Screenshots, and Distribution. Each gate must be `pass`, `warn`, or `fail`; the dashboard is deterministic.
 
@@ -151,7 +175,7 @@ The policy should deny the call in Chat. The sample rule is intentionally illust
 ```text
 dsh-<slug>/
 ├── src/index.ts          # name + inject + apply + Schemastery Config
-├── src/client/index.ts   # optional Web Client Conversation Node
+├── src/client/index.ts   # optional Web Client plugin: node, theme, or shell contribution
 ├── test/smoke.test.mjs   # success, failure, and replay/guard paths
 ├── cordis.dev.yml        # source overlay with absolute import specifier
 ├── cordis.patch.yml      # installed bundle layer
@@ -166,6 +190,8 @@ dsh-<slug>/
 ```powershell
 py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-release-readiness
 py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-command-safety
+py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-aurora-ui
+py -3 scripts/validate_dsh_plugin.py ./showcase/dsh-luna-pet
 ```
 
 The validator checks ESM and bundle metadata, entries, exported plugin contract, Schemastery config, Client metadata when present, collisions with shipped tool names, likely hard-coded credentials, and invalid bare Windows paths. It is a fast static gate; real delivery should also compile, run tests, load the overlay, inspect `--dump-config`, and exercise the Web UI.
@@ -175,9 +201,9 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 ```text
 ├── SKILL.md                 # routing and delivery contract
 ├── assets/templates/        # ESM plugin and bundle templates
-├── references/              # tool, guard, adapter, UI, safety, publish rules
-├── scripts/                 # overlay renderer, validator, report renderer
-├── showcase/                # two meaningful, tested plugins
+├── references/              # tool, guard, adapter, UI, lifecycle, safety, publish rules
+├── scripts/                 # overlay renderer and static validator
+├── showcase/                # four meaningful, tested plugins
 ├── examples/                # request fixtures
 └── evals/                   # rubric, failure taxonomy, evaluation cases
 ```
@@ -185,10 +211,14 @@ The validator checks ESM and bundle metadata, entries, exported plugin contract,
 ## Important limits
 
 - DeepSeek Harness is in developer preview; re-check official contracts when versions change.
+- The official plugin inventory is read-only. This Skill can safely edit the active profile patch, but the current Settings list does not expose enable/disable controls.
+- Host entries hot-switch in the running process; existing pages may require a refresh before Client UI appears or disappears.
 - `dsh-command-safety` is an example policy layer, not a complete shell sandbox or approval system.
 - `dsh-release-readiness` stores its UI payload in core `tool/result` presentation metadata so persisted sessions remain replayable.
+- `dsh-aurora-ui` activates its custom theme at runtime; Harness persists only its built-in theme preference, so the plugin re-applies Aurora when the Client bundle mounts and restores that preference when requested or unloaded.
+- `dsh-luna-pet` embeds the validated 1.69 MB Luna WebP atlas in its Client bundle (about 2.26 MB after base64 embedding). Its row 3/4 interactions are intentionally named **petted** and **content** to match the user's existing artwork rather than generic wave/jump labels.
 - Git installs run `prepare` only when package-manager build permissions allow it. Prefer trusted, commit-pinned sources or prebuilt tarballs.
-- The showcase packages have not been published to npm.
+- The four showcase packages have not been published to npm.
 
 ## License
 
